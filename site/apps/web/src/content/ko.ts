@@ -70,10 +70,6 @@ export const ko: SiteContent = {
       actionLabel: 'macOS용 다운로드',
       statusLabel: '프리뷰',
       note: '아직 Apple 공증 전인 프리뷰입니다. 차단되면 「개인정보 보호 및 보안」에서 「그래도 열기」를 누르세요.',
-      mobileNote: 'umuo는 Mac 앱입니다. Mac에서 umuo.app을 열어 다운로드하세요.',
-      copyLink: '링크 복사',
-      copied: '복사됨',
-      copyFailed: '복사하지 못했습니다. umuo.app을 따로 적어 두세요',
       afterDownload: {
         title: '다운로드를 시작했습니다. 다음 단계:',
         steps: [

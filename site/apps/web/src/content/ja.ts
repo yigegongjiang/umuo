@@ -73,10 +73,6 @@ export const ja: SiteContent = {
       actionLabel: 'macOS 版をダウンロード',
       statusLabel: 'プレビュー版',
       note: '未公証のプレビュー版です。開けない場合は「プライバシーとセキュリティ」で「このまま開く」を押してください。',
-      mobileNote: 'umuo は Mac 用アプリです。Mac で umuo.app を開いてダウンロードしてください。',
-      copyLink: 'URL をコピー',
-      copied: 'コピーしました',
-      copyFailed: 'コピーできませんでした。umuo.app を控えてください',
       afterDownload: {
         title: 'ダウンロードを開始しました。次の手順：',
         steps: [

@@ -4,7 +4,7 @@ import Foundation
 /// 浮窗的几何与外观规则。纯函数：坐标、屏幕、系统外观都由调用方读好传进来，才能测。
 enum PanelRules {
     /// 初始 420×260，最小 320×150（PRD §5.2「可调整大小」，下限防止被拖成一条缝）。
-    static let initialSize = CGSize(width: 420, height: 260)
+    static let initialSize = CGSize(width: 520, height: 340)
     static let minSize = CGSize(width: 320, height: 150)
     /// 浮窗左上角相对鼠标的偏移（14, 18），屏幕坐标向下为正。
     static let cursorOffset = CGSize(width: 14, height: 18)

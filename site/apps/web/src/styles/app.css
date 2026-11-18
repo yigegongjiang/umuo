@@ -239,102 +239,6 @@
     cursor: not-allowed;
   }
 
-  /* 次按钮（手机上的「复制网址」）：普通描边按钮，没有厚底与位移，按下只铺一层淡咖底 */
-  .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap;
-    height: 3rem;
-    padding: 0 1.5rem;
-    border: 1.5px solid var(--accent-strong);
-    border-radius: var(--radius-control);
-    background: transparent;
-    color: var(--accent-strong);
-    font-size: 1rem;
-    font-weight: 600;
-    transition:
-      background-color var(--dur-fast) var(--ease-out),
-      transform var(--dur-base) var(--ease-out);
-  }
-
-  .btn-secondary:hover,
-  .btn-secondary:active {
-    background: var(--coffee-soft);
-  }
-
-  /* 触屏上没有悬停，按下要有手感：轻轻收一下，不做厚底 */
-  .btn-secondary:active {
-    transform: scale(0.97);
-  }
-
-  /* 「复制网址」：图标与文字各占一格叠放，按钮宽度取两种文案里较长的一种，复制成功时不跳 */
-  .copy-icon,
-  .copy-label {
-    display: inline-grid;
-    place-items: center;
-  }
-
-  /* 文字靠左贴着图标：「已复制」比「复制网址」短时，空出来的在右边 */
-  .copy-label {
-    justify-items: start;
-  }
-
-  .copy-icon > *,
-  .copy-label > *,
-  .copy-label::before,
-  .copy-label::after {
-    grid-area: 1 / 1;
-  }
-
-  .copy-label::before {
-    content: attr(data-idle);
-    visibility: hidden;
-  }
-
-  .copy-label::after {
-    content: attr(data-done);
-    visibility: hidden;
-  }
-
-  .copy-icon svg {
-    width: 1.125rem;
-    height: 1.125rem;
-    transition:
-      opacity var(--dur-base) var(--ease-out),
-      transform var(--dur-base) var(--ease-out),
-      filter var(--dur-base) var(--ease-out);
-  }
-
-  .copy-button:not([data-state="copied"]) .copy-icon-done,
-  .copy-button[data-state="copied"] .copy-icon-idle {
-    opacity: 0;
-    transform: scale(0.5);
-    filter: blur(2px);
-  }
-
-  /* 对勾与「已复制」用 keyframes 进场：已复制时再按一次，组件给这两个节点换 key，动画重播 */
-  .copy-button[data-state="copied"] .copy-icon-done {
-    animation: check-in var(--dur-base) var(--ease-out) backwards;
-  }
-
-  .copy-button[data-state="copied"] .copy-text-run {
-    display: inline-block;
-    animation: swap-in var(--dur-base) var(--ease-out) backwards;
-  }
-
-  @keyframes check-in {
-    from {
-      opacity: 0;
-      transform: scale(0.5);
-      filter: blur(2px);
-    }
-  }
-
-  @keyframes swap-in {
-    from {
-      opacity: 0;
-      filter: blur(2px);
-    }
-  }
-
   /* 实心主按钮：首屏唯一的行动入口（下载），深咖底 + 更深的厚边 */
   .btn-solid {
     background: var(--button-fill);
@@ -673,28 +577,6 @@
     text-wrap: pretty;
   }
 
-  .download-mobile-note {
-    text-wrap: pretty;
-    max-width: 24rem;
-    margin-bottom: 0.875rem;
-    color: var(--ink-2);
-    font-size: 0.9375rem;
-  }
-
-  /* 触屏设备拿不到能用的 Mac 安装包：换成「请在 Mac 上打开」与复制网址（手机端其余简化在本层末尾） */
-  .download-touch {
-    display: none;
-  }
-
-  @media (hover: none) and (pointer: coarse) {
-    .download-desktop {
-      display: none;
-    }
-    .download-touch {
-      display: block;
-    }
-  }
-
   /* 首屏内部的纵向节奏随视口高度收放，矮屏也能一屏放下 */
   .hero-gap {
     margin-top: clamp(0.75rem, 2.4svh, 1.5rem);
@@ -1028,16 +910,10 @@
     .demo-tab-name {
       white-space: normal;
     }
-    /* 选项卡放不下「开发中」整个标签：缩成名称后的小圆点（文字仍给读屏） */
+    /* 「开发中」标签收一号，放不下时折到名称下面 */
     .demo-tabs .tag {
-      width: 0.4375rem;
-      height: 0.4375rem;
-      padding: 0;
-      overflow: hidden;
-      border: 0;
-      border-radius: 50%;
-      background: var(--accent);
-      font-size: 0;
+      padding-inline: 0.25rem;
+      font-size: 0.6875rem;
     }
   }
 
@@ -1078,10 +954,6 @@
     .hero {
       grid-template-columns: minmax(0, 1fr);
     }
-    .demo-tabs .tag {
-      padding-inline: 0.25rem;
-      font-size: 0.6875rem;
-    }
     .hero-title {
       font-size: clamp(1.875rem, 8.5vw, 2.25rem);
     }
@@ -1112,20 +984,15 @@
     }
   }
 
-  /* —— 手机（触屏，与「复制网址」同一条件）：只留文字与一个按钮 ——
-     演示与字符网格照样预渲染（同一份 HTML 给桌面和手机，hydrate 才一致），这里只用 CSS 隐藏；
+  /* —— 手机（触屏）：文字、下载、演示自上而下排成一列，可以滚动，背景字符网格与桌面相同 ——
      放在窄屏规则之后，覆盖它们的字号与间距。桌面（含窄而矮的窗口）不受影响。 */
   @media (hover: none) and (pointer: coarse) {
-    .hero-demo,
-    .language-grid {
-      display: none;
-    }
     .site-nav svg {
       box-shadow: none;
     }
     .hero {
       grid-template-columns: minmax(0, 1fr);
-      gap: 0;
+      gap: 2.5rem;
       padding-block: 1.5rem;
     }
     .hero-title {
@@ -1140,9 +1007,6 @@
     }
     .hero-gap-lg {
       margin-top: 2rem;
-    }
-    .download-mobile-note {
-      margin-bottom: 1rem;
     }
     .site-footer {
       border-top: 0;
@@ -1193,14 +1057,8 @@
   }
   /* 悬停 / 按下的位移与缩放一并去掉，只留颜色反馈 */
   .btn-solid svg,
-  .btn-secondary,
   .nav-icon-link {
     transform: none;
-  }
-  /* 复制成功的图标直接换，不缩放不模糊 */
-  .copy-icon svg {
-    transform: none;
-    filter: none;
   }
   *,
   ::before,

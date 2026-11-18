@@ -205,7 +205,7 @@ describe('首页一屏', () => {
   })
 })
 
-describe('手机端只留文字与一个按钮', () => {
+describe('手机端：文字、下载与演示排成一列', () => {
   // happy-dom 不计算媒体查询：桌面与手机共用同一份 DOM，手机上的隐藏只能从样式表里断言
   const css = readFileSync(join(import.meta.dirname, '../styles/app.css'), 'utf8')
   const touch = '@media (hover: none) and (pointer: coarse) {'
@@ -214,62 +214,20 @@ describe('手机端只留文字与一个按钮', () => {
     .slice(1)
     .map((rest) => rest.slice(0, rest.indexOf('\n  }\n')))
 
-  it('触屏条件下隐藏演示与字符网格，且只在这一条件下隐藏', () => {
-    expect(
-      touchBlocks.some((block) =>
-        /\.hero-demo,\s*\.language-grid\s*\{\s*display: none;/.test(block),
-      ),
-    ).toBe(true)
+  it('触屏条件下字符网格、演示与下载按钮都照常显示', () => {
+    expect(touchBlocks.some((block) => /display: none;/.test(block))).toBe(false)
     // 按视口高度给手机分档的规则已经删掉
     expect(css).not.toMatch(/max-height/)
     expect(css).not.toContain(':has(.download-next)')
   })
 
-  it('复制网址是普通描边按钮，不用厚底按压', () => {
-    const rule = css.match(/\n {2}\.btn-secondary \{[^}]*\}/)?.[0] ?? ''
-    expect(rule).toContain('border: 1.5px solid var(--accent-strong)')
-    expect(rule).not.toContain('--press-depth')
-    expect(css).not.toMatch(/\.btn-secondary[^{]*:active[^{]*\{[^}]*translateY/)
+  it('手机上没有「复制网址」，下载按钮就是唯一的按钮', () => {
+    expect(host.querySelector('.copy-button, .download-touch')).toBeNull()
+    expect(host.querySelectorAll('#download .download-panel .btn-solid')).toHaveLength(1)
   })
 
-  it('复制网址：成功显示「已复制」，失败说出来并给出网址', async () => {
-    const button = () => host.querySelector<HTMLButtonElement>('.download-touch button')
-    const writeText = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('x'))
-    vi.stubGlobal('navigator', { clipboard: { writeText } })
-    await act(async () => button()?.click())
-    expect(writeText).toHaveBeenCalledWith('https://umuo.app')
-    expect(button()?.textContent).toBe('已复制')
-    await act(async () => button()?.click())
-    expect(host.querySelector('.download-touch [role="status"]')?.textContent).toBe(
-      '没能复制，请手动记下 umuo.app',
-    )
-  })
-})
-
-describe('复制网址：已复制时再按一次', () => {
-  it('重新复制，两秒从头算，对勾与文字换节点重播', async () => {
-    vi.useFakeTimers()
-    try {
-      const button = () => host.querySelector<HTMLButtonElement>('.download-touch button')
-      const check = () => host.querySelector('.copy-icon-done')
-      const writeText = vi.fn().mockResolvedValue(undefined)
-      vi.stubGlobal('navigator', { clipboard: { writeText } })
-      await act(async () => button()?.click())
-      expect(button()?.dataset.state).toBe('copied')
-      const firstCheck = check()
-      await act(async () => vi.advanceTimersByTime(1500))
-      await act(async () => button()?.click())
-      expect(writeText).toHaveBeenCalledTimes(2)
-      expect(check()).not.toBe(firstCheck)
-      // 第一次的两秒已过，但计时从第二次重新算
-      await act(async () => vi.advanceTimersByTime(1500))
-      expect(button()?.textContent).toBe('已复制')
-      await act(async () => vi.advanceTimersByTime(600))
-      expect(button()?.dataset.state).toBe('idle')
-      expect(button()?.textContent).toBe('复制网址')
-    } finally {
-      vi.useRealTimers()
-    }
+  it('「开发中」标签窄屏下只收字号，不缩成圆点', () => {
+    expect(css).not.toMatch(/\.demo-tabs \.tag \{[^}]*font-size: 0;/)
   })
 })
 
