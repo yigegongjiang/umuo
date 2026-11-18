@@ -42,22 +42,20 @@ and an installed app can check for updates under **Settings › About**.
 The installer is not yet notarized by Apple: if macOS blocks it on first launch, go to **System Settings → Privacy & Security** and click **Open Anyway**.
 You can also build it yourself — see "Build from source" below. Homebrew installation is not available yet (see "To do" in the [implementation plan](docs/IMPLEMENTATION-PLAN.md)).
 
-## Current status and where to start
+## Project documentation
 
-2026-11-13: The native client, Sparkle auto-updates and voice input (recording, on-device transcription, cleanup/translation, writing back into the text field) are complete.
-Client changes merged into `main` are published to GitHub Releases automatically (`v0.2.<build number>`, stable release, installer `umuo-v<version>.dmg`).
-Release builds are signed with a fixed self-signed certificate and are **not notarized by Apple**; Developer ID signing and notarization require a paid Apple Developer account and are on hold for now.
-On-device acceptance testing is still to be done. To keep the first release focused, older features — multi-model comparison, style and glossary management, cost budgets and favorites — have been removed (existing data is kept).
+On-device acceptance testing is pending. Voice input is experimental.
 
 Project docs (developer docs are in Simplified Chinese):
 
-- [Product requirements](docs/PRD.md): current features and business boundaries.
-- [First-release plan](docs/IMPLEMENTATION-PLAN.md): order and completion criteria for slimming down, voice, open-sourcing and release.
-- [Implementation and acceptance checklist](docs/PRD-CONFORMANCE.md): existing code, scope changes, what is not implemented, and on-device acceptance.
-- [Releases and Sparkle keys](docs/SWIFTUI-MIGRATION.md): automatic GitHub Releases publishing, cleanup after failures, keys, and the steps for adding notarization later.
-- [On-device walkthrough](docs/NATIVE-WALKTHROUGH.md): on-device acceptance sheets for text, screenshot and voice, plus how performance is measured.
-- [Contributing guide](CONTRIBUTING.md): licensing, what to know before you start, and PR requirements.
-- [Security policy](SECURITY.md): how to report a security vulnerability privately.
+- [Product requirements](docs/PRD.md)
+- [Client architecture](docs/ARCHITECTURE.md)
+- [First-release plan](docs/IMPLEMENTATION-PLAN.md)
+- [Implementation and acceptance checklist](docs/PRD-CONFORMANCE.md)
+- [Releases and Sparkle keys](docs/SWIFTUI-MIGRATION.md)
+- [On-device walkthrough](docs/NATIVE-WALKTHROUGH.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
 The website [umuo.app](https://umuo.app) (a single landing page) and its Worker live in [site/](site/), and are deployed automatically by Cloudflare Workers Builds once merged into `main`.
 
@@ -120,14 +118,6 @@ site/               Website and Worker, a standalone Bun project
 scripts/            Icon generation, third-party license checks and native release tooling
 docs/              PRD, architecture, releases, on-device walkthrough and acceptance checklists
 ```
-
-## Architecture principles
-
-1. The UI is built with SwiftUI; windows and system integration use AppKit and native Apple APIs. Interaction design follows Apple's Human Interface Guidelines.
-2. `umuo-app` and `umuo-core` stay platform-independent and testable on Linux; app orchestration is exposed to Swift via UniFFI rather than rewritten in Swift.
-3. Platform capabilities are implemented in the Swift host: reading and writing text via Accessibility (AX), Keychain, Vision OCR, voice, shortcuts and windows.
-4. Providers are data; requests stream their output, each request can be cancelled independently, and stale events never overwrite newer results.
-5. Keys live only in the macOS Keychain — never in config, logs or history — and provider requests are made from Rust.
 
 ## Privacy
 

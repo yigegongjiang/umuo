@@ -44,22 +44,20 @@ umuo는 완전 무료이며 MIT 라이선스로 공개된 오픈소스이고, �
 설치 파일은 아직 Apple 공증을 받지 않았습니다. 처음 열 때 차단되면 **시스템 설정 → 개인정보 보호 및 보안**에서 「그래도 열기」를 누르세요.
 아래 「소스에서 빌드」를 따라 직접 컴파일할 수도 있습니다. Homebrew 설치는 아직 제공하지 않습니다([개발 계획](docs/IMPLEMENTATION-PLAN.md)의 「할 일」 참고).
 
-## 현재 상태와 개발 문서
+## 개발 문서
 
-2026-11-13: 네이티브 클라이언트, Sparkle 자동 업데이트, 음성 입력(녹음, 로컬 음성 인식, 다듬기/번역, 입력란에 다시 써넣기)이 완성되었습니다.
-클라이언트 변경 사항이 `main`에 병합되면 GitHub Releases에 자동으로 배포됩니다(`v0.2.<번호>`, 정식 버전, 설치 파일 `umuo-v<버전>.dmg`).
-정식 패키지는 고정된 자체 서명 인증서로 서명되며 **Apple 공증을 받지 않았습니다**. Developer ID 서명과 공증에는 유료 Apple 개발자 계정이 필요해 당분간 보류합니다.
-실기기 검수는 아직 남아 있습니다. 첫 버전의 범위를 좁히기 위해 다중 모델 비교, 스타일·용어 관리, 비용 예산, 즐겨찾기 등 이전 기능은 제거했습니다(이전 데이터는 보존).
+실기기 검수는 아직 남아 있으며, 음성 입력은 실험적 기능입니다.
 
 아래 개발 문서는 중국어 간체로 작성되어 있습니다.
 
-- [제품 요구사항](docs/PRD.md): 현재 기능과 사업 범위.
-- [첫 버전 개발 계획](docs/IMPLEMENTATION-PLAN.md): 기능 정리, 음성, 오픈소스화, 배포의 순서와 완료 조건.
-- [구현·검수 체크리스트](docs/PRD-CONFORMANCE.md): 기존 코드, 새 범위 조정, 미구현 항목과 실기기 검수.
-- [배포와 Sparkle 키](docs/SWIFTUI-MIGRATION.md): GitHub Releases 자동 배포, 실패 시 정리, 키 관리, 향후 공증 연동 절차.
-- [실기기 점검](docs/NATIVE-WALKTHROUGH.md): 텍스트·스크린샷·음성의 실기기 검수표와 성능 측정 기준.
-- [기여 가이드](CONTRIBUTING.md): 라이선스, 개발 전 유의 사항, PR 요건.
-- [보안 정책](SECURITY.md): 보안 취약점을 비공개로 제보하는 방법.
+- [제품 요구사항](docs/PRD.md)
+- [클라이언트 아키텍처](docs/ARCHITECTURE.md)
+- [첫 버전 개발 계획](docs/IMPLEMENTATION-PLAN.md)
+- [구현·검수 체크리스트](docs/PRD-CONFORMANCE.md)
+- [배포와 Sparkle 키](docs/SWIFTUI-MIGRATION.md)
+- [실기기 점검](docs/NATIVE-WALKTHROUGH.md)
+- [기여 가이드](CONTRIBUTING.md)
+- [보안 정책](SECURITY.md)
 
 공식 웹사이트 [umuo.app](https://umuo.app)(단일 페이지 홈)과 Worker는 [site/](site/)에 있으며, `main`에 병합되면 Cloudflare Workers Builds가 자동으로 배포합니다.
 
@@ -124,14 +122,6 @@ site/               공식 웹사이트와 Worker, 독립 Bun 프로젝트
 scripts/            아이콘 생성, 서드파티 라이선스 검사, 네이티브 배포 도구
 docs/              PRD, 아키텍처, 배포, 실기기 점검, 검수 체크리스트
 ```
-
-## 아키텍처 원칙
-
-1. UI는 SwiftUI를, 창과 시스템 기능은 AppKit과 Apple 네이티브 API를 사용합니다. 인터랙션은 Apple Human Interface Guidelines를 따릅니다.
-2. `umuo-app`과 `umuo-core`는 플랫폼 독립적으로 유지해 Linux에서도 테스트할 수 있습니다. 앱 오케스트레이션은 UniFFI로 Swift에 제공하며 Swift에서 다시 구현하지 않습니다.
-3. 플랫폼 기능은 Swift 호스트에서 구현합니다: AX 텍스트 가져오기와 다시 써넣기, 키체인, Vision OCR, 음성, 단축키, 창.
-4. Provider는 데이터입니다. 요청은 스트리밍으로 출력되고 요청마다 독립적으로 취소되며, 이전 이벤트가 새 결과를 덮어쓰지 않습니다.
-5. API 키는 시스템 키체인에만 저장하고 설정, 로그, 기록에는 남기지 않습니다. 제공업체 요청은 Rust에서 보냅니다.
 
 ## 개인정보
 

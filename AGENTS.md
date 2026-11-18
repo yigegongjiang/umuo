@@ -1,79 +1,33 @@
-# Agent Instructions
+# umuo 项目指引
 
-本文件是本仓库对 AI agent 的唯一指令来源。`CLAUDE.md` 只做指针。
+本文件维护仓库的 agent 指令。修改官网或 Worker 前，另读 [site/AGENTS.md](site/AGENTS.md)，在 `site/` 使用独立的 Bun 项目。
 
-## 项目与边界
+## 范围与入口
 
-umuo 是 macOS 系统级 AI 翻译客户端，BYOK、MIT 开源（含 `site/`），仓库公开于 github.com/youming-ai/umuo。客户端使用 Swift 6 + SwiftUI + AppKit（macOS 14+），
-Rust 内核经 UniFFI 调用。2026-10-22 已按用户要求删除旧 Tauri 客户端、React UI、CSS tokens 与 Rust 平台适配层。
-官网及 Worker 在 `site/`，是独立 Bun 项目；修改它时先读 `site/AGENTS.md`。
+umuo 是面向 Apple Silicon、macOS 14+ 的原生翻译与语音工具。核心功能是文字翻译（含原地替换）、OCR 截图翻译和语音输入后的整理或翻译。项目按 MIT 许可证开源，产品完全免费，模型调用采用纯 BYOK。账号、订阅、授权收费、试用、官方额度和 AI 网关均已退出产品范围。完整边界以产品需求为准。
 
-开发功能或精简入口前，先读 `docs/PRD.md`、`docs/PRD-CONFORMANCE.md` 与 `docs/IMPLEMENTATION-PLAN.md`；
-按开发计划推进，完成后更新验收清单的实现证据与状态。
-发布流程、Sparkle 密钥与必须守住的兼容性见 `docs/SWIFTUI-MIGRATION.md`。只做 macOS、只发 Apple Silicon（arm64），不为未来平台提前抽象。
-当前核心为文字翻译（含原地替换）、OCR 截图翻译、语音输入后润色/翻译。完全免费、纯 BYOK（2026-11-02 定案）；
-收费、许可证、试用、账号、订阅、官方额度与 AI 网关都不在范围内，不要重新引入。
-语音主要参考 Handy，本地转写引擎先验证再选定；不引入 Tauri 外壳。旧范围与实现记录已归档，不据此恢复退出功能。
+- **功能或入口变更**：先读 [PRD](docs/PRD.md)、[实现与验收清单](docs/PRD-CONFORMANCE.md) 和 [开发计划](docs/IMPLEMENTATION-PLAN.md)。完成后在验收清单记录实现证据、验证结果和剩余真机项目。
+- **线程、事件和 Host 接口**：读 [架构 §2.1–2.3](docs/ARCHITECTURE.md)。
+- **发布、签名、Sparkle 或升级兼容**：读 [发布与 Sparkle 密钥](docs/SWIFTUI-MIGRATION.md)。保留正式版 Latest 标记和安装包、更新包及 appcast 的命名规则。
+- **真机或性能验收**：按 [真机走查](docs/NATIVE-WALKTHROUGH.md) 操作。性能使用 release 包，内存记录 `footprint` 的 `phys_footprint`。
+- **README**：以简体中文为准，同步英文、繁体中文、日文和韩文。
+
+## 实现约束
+
+- `apps/macos/` 使用 Swift 6、SwiftUI 和 AppKit，负责系统交互。平台无关业务逻辑放入 `umuo-app`，翻译协议、Prompt 和传输放入 `umuo-core`，两者须在 Linux 上可构建和测试。`umuo-ffi` 只做类型转换和导出，`umuo-bindgen` 只在构建时生成 Swift 绑定。
+- 流水线需要的 Key、前台应用和写回通过 `umuo_app::Host` 调用 Swift 宿主。同步 Host 回调不得等待主线程。模型请求由 Rust 发出，API Key 只存系统 Keychain，界面只读取配置状态，配置、日志和历史不记录 Key。
+- 发布与升级须保留 Bundle ID `app.umuo.desktop`、`umuo.app` 和可执行文件名 `umuo-desktop`，兼容现有 Keychain、系统授权与 LaunchAgent。Rust 读写 `settings.json` 并保留未知字段，Swift 只提交 patch。历史沿用 `history.db` 和已发布的 SQLite 迁移，旧收藏和用量表仅作数据保留。
+- UI 遵循 Apple HIG，采用系统控件、语义色、文字样式和 SF Symbols。使用 `Form(.grouped)` 或 `GroupBox` 分组，非激活浮窗用 AppKit `NSPanel` 和 `floatingSurface`（macOS 26 Liquid Glass，旧系统回落至系统材质）。外观只有跟随系统、浅色和深色，由 `ThemeChoice.apply` 统一处理，保留 VoiceOver、增强对比度与减少动态效果支持。
 
 ## 开发与验证
 
-需要 Bun 1.4+（唯一 JS 包管理器，版本以 `packageManager` 为准）、rustup（Rust 版本由 `rust-toolchain.toml` 固定）、
-Swift 6 与 macOS 26 SDK（Xcode 26，或带该 SDK 的 Command Line Tools；浮窗的 Liquid Glass 需要它）。
-命令以根 `package.json` 为准。`bun run dev:macos` 从当前源码编译后启动；开发二进制默认不注册快捷键，
-需要时加 `--hotkeys`，先确认只有一个 umuo 实例。不要拿上次编译的二进制验证当前修改。
-
-提交前跑 `bun run verify`：工具 lint / 类型检查、cargo fmt、clippy -D warnings、Rust 测试、
-Swift build / Swift Testing / FFI selftest / 原生打包冒烟。非 macOS 跳过 Swift 部分，CI 的 macos-app 仍须验证。
-改翻译逻辑必须跑 `bun run test:rust`；改原生 UI 必须跑 `bun run verify:macos`。
-新增 CI 门禁时同步接入 `verify`，避免本机全绿而 CI 漏检；CI 的 macos-app 直接调用 `verify.sh`。
-CI：PR 跑完整 `ci.yml`；main 上客户端改动由 `release.yml` 调用同一套 CI 后发布，其余非文档改动只跑 `ci.yml`，只改文档不跑。
-功能分支要在 CI 上验证时用 `gh workflow run ci.yml --ref <分支>`。
-本机门禁照常先跑，PR 描述写明结果；GitHub 网页合并会用账号默认邮箱，合并改在本地做再推送。
-
-## 目录与分层
-
-- `apps/macos/`：原生客户端；`Sources/Umuo` 按功能分目录，`Tests/UmuoTests` 使用 Swift Testing。
-- `crates/umuo-app/`：应用编排、Host、流水线、设置、历史等业务逻辑。
-- `crates/umuo-core/`：翻译协议、Prompt、计量与传输。
-- `crates/umuo-ffi/`：只做类型转换与导出，不写业务逻辑。
-- `crates/umuo-store/`：SQLite 历史；旧收藏与用量账本的表与迁移保留，程序不再读写。
-- `crates/umuo-bindgen/`：只生成 Swift 绑定的构建工具（`uniffi` 的 `cli` 特性），不被任何库依赖，不进 `umuo.app`。
-- `scripts/`：图标生成与发布工具；`site/` 独立维护。
-
-`umuo-core` 与 `umuo-app` 不得依赖平台 API、Tauri 或 UniFFI，必须可在 Linux 编译测试。
-流水线中途需要的平台能力（Key、前台应用、写回）只走 `umuo_app::Host`；其余系统能力留在 Swift 宿主。
-线程与事件约定见 `docs/ARCHITECTURE.md` §2.1–2.3；同步 Host 回调不得等待主线程。
-可复用业务逻辑放 `umuo-app`，Swift 通过 `umuo-ffi` 调用，不另写一份。
-
-## Apple 原生界面规范
-
-界面与交互遵循 Apple Human Interface Guidelines，优先使用 SwiftUI 标准控件、系统语义颜色、字体与 SF Symbols。
-窗口、菜单、焦点、快捷键、键盘导航与辅助功能遵循 macOS 原生行为；特殊非激活浮窗使用 AppKit NSPanel。
-保留 VoiceOver、提高对比度与减少动态效果支持；不要把旧 WebView 的 CSS 布局当成原生规范。
-不维护自己的设计令牌：颜色用系统语义色，字号用系统文字样式，分组用 `Form(.grouped)` / `GroupBox`，浮动窗口用 `floatingSurface`（macOS 26 的 Liquid Glass，更早回落系统材质）。外观只有跟随系统 / 浅色 / 深色三种，经 `ThemeChoice.apply` 设到整个应用；高对比度交给系统设置。
+1. 使用根 `package.json` 指定的 Bun 版本、`rust-toolchain.toml` 锁定的 Rust 工具链，以及 Swift 6 和 macOS 26 SDK。命令以根 `package.json` 为准。
+2. 用 `bun run dev:macos` 从当前源码构建并启动。开发构建默认关闭全局快捷键。需要测试时先退出其他 umuo 实例，再运行 `bun run dev:macos --hotkeys`。
+3. 翻译逻辑改动跑 `bun run test:rust`，原生 UI 改动跑 `bun run verify:macos`，提交前跑 `bun run verify`。非 macOS 环境由 CI 的 `macos-app` 验证原生部分。官网在 `site/` 单独跑 `bun run verify`。
+4. 新增 CI 门禁时同步接入本机 `verify`。功能分支可用 `gh workflow run ci.yml --ref <分支>` 触发 CI，在 PR 说明记录验证结果。客户端改动合入 `main` 后由 Release 工作流跑 CI 并发布正式版。合并在本地完成再推送，以使用本地 Git 邮箱。
 
 ## 风格与测试
 
-注释与提交信息用中文，代码标识符用英文。Rust public API 写文档注释，cargo fmt 标准格式，clippy 零 warning。
-TS/JS 以 Biome 为准：2 空格、100 列、单引号、无分号；不引入 ESLint、Prettier 或第二个包管理器。
+注释与提交信息用中文，代码标识符用英文。Rust 公共 API 写文档注释，用 cargo fmt 和 clippy 检查。TS/JS 格式以 Biome 配置为准，JS 包管理使用 Bun。
 
-Rust 单测与模块同文件，跨模块流水线回归在 `crates/umuo-app/tests/pipeline.rs`，
-事件兼容快照在 `crates/umuo-app/tests/event_wire.rs`。FFI 行为另由 `crates/umuo-ffi/src/engine.rs` 与 `Umuo --selftest` 验证。
-Swift 视图模型与纯规则用 Swift Testing；不要在测试里碰真实 Keychain、用户剪贴板、投递按键或访问真实供应商端点。
-官网 TS 测试使用它自己的 Vitest；不要用 `bun test` 替代。
-
-## 发布与兼容性
-
-客户端改动合入 main 即由 `.github/workflows/release.yml` 发布到 GitHub Releases（`v0.2.<运行序号>`，arm64，正式版并标 Latest，固定自签名证书签名、尚未公证）。
-手动发版用该工作流的 workflow_dispatch；发布失败后的清理见 `docs/SWIFTUI-MIGRATION.md`。
-附件：安装包 `umuo-v<版本>.dmg`（官网 `/download/macos` 由 Worker 读 `releases/latest` 的跳转拿到最新 tag 再跳过去，缓存 5 分钟），
-更新包 `umuo.app.tar.gz` 与 `appcast.xml` 名字固定（Sparkle 的 SUFeedURL 指向 `releases/latest/download/appcast.xml`）。
-不要改这些命名规则，也不要把 Release 标成预发布（预发布不算 latest）。
-本机 `bun run bundle:macos -- --version X.Y.Z` 只产出文件、不上传。官网不存安装包（没有 R2）。
-
-保留 Bundle ID `app.umuo.desktop`、`umuo.app` 与可执行文件名 `umuo-desktop`，不能破坏 Keychain、系统授权与旧 LaunchAgent。
-`settings.json` 只由 Rust 读写，Swift 只提交 patch；保留未知字段。历史沿用 `history.db` 与已发布迁移。
-API Key 只进 Keychain，不写配置、日志、历史，不从界面读回明文；供应商请求走 Rust。
-
-测性能前读 `docs/NATIVE-WALKTHROUGH.md`「性能测量」：用 release 包，内存用 `footprint` 的 phys_footprint，不用 RSS；
-快捷键测量前确认只有一个 umuo 实例。旧 Tauri 的数字已归档，不能当作 SwiftUI 的发布验收结果。
+Rust 单测与模块同文件。跨模块流水线回归和事件兼容快照位于 `crates/umuo-app/tests/`。FFI 行为由 `crates/umuo-ffi/src/engine.rs` 和 `Umuo --selftest` 验证。Swift 视图模型和纯规则使用 Swift Testing，官网测试使用 Vitest。测试使用替身和本地桩隔离用户 Keychain、剪贴板、系统按键与真实供应商端点。
