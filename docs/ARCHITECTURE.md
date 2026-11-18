@@ -48,8 +48,8 @@ Swift 负责界面、窗口与系统集成；可复用应用逻辑放 `umuo-app`
 | --- | --- |
 | `api_key(provider_id)` | `Platform/Keychain.swift` 用 Security.framework 读旧文件 Keychain，不设 `kSecUseDataProtectionKeychain`；service 保持 `app.umuo.desktop`，account 是供应商 id |
 | `frontmost_app_name()` | `FrontmostApp.swift` 读取 NSWorkspace 激活通知维护的加锁缓存，用于来源标注与按 App 记忆 |
-| `frontmost_app_token()` | 每次现查系统 AXFocusedApplication 的 pid，不能用可能晚一拍的激活通知缓存 |
-| `write_back(source, original, text)` | `AXWriteBack.swift`：仅成功且目标守卫放行后写回；检查可写性与原文；静默替换不模拟粘贴 |
+| `write_target_token()` | 每次现查当前聚焦控件，返回不透明的写回目标身份（`AXTextProbe.targetToken`：控件身份，可读到选区时再带选区位置与长度），不读激活通知缓存 |
+| `write_back(source, original, text, target)` | `AXWriteBack.swift`：仅成功且目标守卫放行后写回；用 `target` 核验仍是取词时的同一控件与选区，再检查可写性与原文；静默替换不模拟粘贴 |
 
 回调全部同步，在 Rust 工作线程执行，不等待用户授权，也不得 `DispatchQueue.main.sync`。
 需要授权时返回可操作错误，由界面引导用户处理，避免主线程与 Rust 同步调用互相等待。
@@ -133,7 +133,7 @@ Swift 处理事件更新界面。
    不走网络，不需要语音 Key。
 4. 后处理：`VoicePostProcessor` 调 `Engine.start_voice`，Rust 的 `umuo-app::voice` 用当前文字模型做同语言整理或翻译
    （指令在 `umuo-core::voice`，保留否定、数字、姓名、日期与金额）；成功且完整的结果写 `voice` 场景历史。
-5. 交付：`VoiceDelivery` 依次核验权限、应用存活、前台、同一焦点元素与窗口、非安全输入；可写文本控件写 `AXSelectedText`，
+5. 交付：录音开始时 `VoiceDelivery` 在处理按键的主线程上记下目标控件、选区与文本（避免后台任务把之后切入的输入框认作目标；AX 消息超时限为 0.25 s），交付时在后台依次核验权限、应用存活、前台、同一焦点元素与窗口、非安全输入；可写文本控件写 `AXSelectedText`，
    不可判定或 Electron 类走受控粘贴，等锁与快照之后再次核验同一组条件与取消状态；终端与非输入角色拒绝；不合成回车。
    拒绝或失败时结果留在浮层可复制、可重试。
 6. Esc 在录音、转写、后处理各阶段分别丢弃录音、中止转写、取消请求；迟到的结果按会话号丢弃。
