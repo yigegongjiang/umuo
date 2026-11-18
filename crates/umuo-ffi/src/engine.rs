@@ -149,7 +149,7 @@ impl Engine {
         &self,
         request: Request,
         ticket: Ticket,
-        guard_token: Option<String>,
+        write_target: Option<String>,
         sink: Arc<dyn TranslateSink>,
     ) -> Arc<RequestHandle> {
         let handle = RequestHandle {
@@ -163,7 +163,7 @@ impl Engine {
         let text = request.text.clone();
         let core = self.core.clone();
         self.spawn_translate(route, text, sink, move |sink| async move {
-            translate::run(&core, &sink, request, guard_token, ticket).await;
+            translate::run(&core, &sink, request, write_target, ticket).await;
         });
         Arc::new(handle)
     }
@@ -245,17 +245,17 @@ impl Engine {
 
     /// 开始一次翻译，立即返回。同一窗口的上一次请求随之取消。
     ///
-    /// `guard_token` 只有静默翻译需要：取词时记下的写回目标身份（与 `Host::frontmost_app_token` 同一口径），写回前与当时的比对。
+    /// `write_target` 只有静默翻译需要：取词时记下的写回目标身份（与 `Host::write_target_token` 同一口径），写回前与当时的比对。
     pub fn translate(
         &self,
         request: TranslateRequest,
-        guard_token: Option<String>,
+        write_target: Option<String>,
         sink: Arc<dyn TranslateSink>,
     ) -> Arc<RequestHandle> {
         let request: Request = request.into();
         // 登记同步完成：新请求立刻顶掉同一窗口的旧请求，不必等任务排上队。
         let ticket = self.core.requests.begin(request.mode.surface());
-        self.spawn_translation(request, ticket, guard_token, sink)
+        self.spawn_translation(request, ticket, write_target, sink)
     }
 
     /// 用按快捷键时 `begin_request` 登记的那张凭据开始翻译（划词、原地替换），立即返回。
@@ -267,7 +267,7 @@ impl Engine {
         &self,
         request: TranslateRequest,
         ticket_id: u64,
-        guard_token: Option<String>,
+        write_target: Option<String>,
         sink: Arc<dyn TranslateSink>,
     ) -> Option<Arc<RequestHandle>> {
         let request: Request = request.into();
@@ -275,7 +275,7 @@ impl Engine {
             .core
             .requests
             .ticket(request.mode.surface(), ticket_id)?;
-        Some(self.spawn_translation(request, ticket, guard_token, sink))
+        Some(self.spawn_translation(request, ticket, write_target, sink))
     }
 
     /// 当前设置（JSON，字段名与 settings.json 一致）。Swift 只解码视图要用的字段。
@@ -340,10 +340,16 @@ mod tests {
         fn frontmost_app_name(&self) -> Option<String> {
             Some("TextEdit".into())
         }
-        fn frontmost_app_token(&self) -> Option<String> {
+        fn write_target_token(&self) -> Option<String> {
             Some("pid-1".into())
         }
-        fn write_back(&self, _: FocusSource, _: String, _: String) -> Result<(), HostFailure> {
+        fn write_back(
+            &self,
+            _: FocusSource,
+            _: String,
+            _: String,
+            _: Option<String>,
+        ) -> Result<(), HostFailure> {
             Err(HostFailure::Failed {
                 detail: "这些测试不写回".into(),
             })
@@ -592,10 +598,16 @@ mod tests {
         fn frontmost_app_name(&self) -> Option<String> {
             None
         }
-        fn frontmost_app_token(&self) -> Option<String> {
+        fn write_target_token(&self) -> Option<String> {
             None
         }
-        fn write_back(&self, _: FocusSource, _: String, _: String) -> Result<(), HostFailure> {
+        fn write_back(
+            &self,
+            _: FocusSource,
+            _: String,
+            _: String,
+            _: Option<String>,
+        ) -> Result<(), HostFailure> {
             Ok(())
         }
     }

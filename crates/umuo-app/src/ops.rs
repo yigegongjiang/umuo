@@ -357,10 +357,16 @@ mod tests {
         fn frontmost_app_name(&self) -> Option<String> {
             None
         }
-        fn frontmost_app_token(&self) -> Option<String> {
+        fn write_target_token(&self) -> Option<String> {
             None
         }
-        fn write_back(&self, _: FocusSource, _: &str, _: &str) -> Result<(), String> {
+        fn write_back(
+            &self,
+            _: FocusSource,
+            _: &str,
+            _: &str,
+            _: Option<&str>,
+        ) -> Result<(), String> {
             unreachable!("这些测试不写回")
         }
     }

@@ -102,10 +102,16 @@ mod tests {
         fn frontmost_app_name(&self) -> Option<String> {
             Some("Safari".to_string())
         }
-        fn frontmost_app_token(&self) -> Option<String> {
+        fn write_target_token(&self) -> Option<String> {
             Some("pid-1".to_string())
         }
-        fn write_back(&self, _: crate::host::FocusSource, _: &str, _: &str) -> Result<(), String> {
+        fn write_back(
+            &self,
+            _: crate::host::FocusSource,
+            _: &str,
+            _: &str,
+            _: Option<&str>,
+        ) -> Result<(), String> {
             unreachable!("这些测试不写回")
         }
     }

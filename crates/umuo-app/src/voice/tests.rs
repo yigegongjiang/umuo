@@ -33,10 +33,10 @@ impl Host for Fake {
     fn frontmost_app_name(&self) -> Option<String> {
         None
     }
-    fn frontmost_app_token(&self) -> Option<String> {
+    fn write_target_token(&self) -> Option<String> {
         None
     }
-    fn write_back(&self, _: FocusSource, _: &str, _: &str) -> Result<(), String> {
+    fn write_back(&self, _: FocusSource, _: &str, _: &str, _: Option<&str>) -> Result<(), String> {
         panic!("语音后处理不写回，交付由会话层负责")
     }
 }
