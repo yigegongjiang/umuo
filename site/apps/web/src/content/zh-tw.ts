@@ -72,10 +72,6 @@ export const zhTw: SiteContent = {
       actionLabel: '下載 macOS 版',
       statusLabel: '預覽版',
       note: '預覽版未經 Apple 公證，首次打開若被攔下，到「隱私權與安全性」點「仍要打開」。',
-      mobileNote: 'umuo 是 Mac App，請在 Mac 上開啟 umuo.app 下載。',
-      copyLink: '複製網址',
-      copied: '已複製',
-      copyFailed: '沒能複製，請手動記下 umuo.app',
       afterDownload: {
         title: '下載已開始，接下來：',
         steps: [

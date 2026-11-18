@@ -72,10 +72,6 @@ export const zhCn: SiteContent = {
       actionLabel: '下载 macOS 版',
       statusLabel: '预览版',
       note: '预览版未经 Apple 公证，首次打开如被拦截，到「隐私与安全性」点「仍要打开」。',
-      mobileNote: 'umuo 是 Mac 应用，请在 Mac 上打开 umuo.app 下载。',
-      copyLink: '复制网址',
-      copied: '已复制',
-      copyFailed: '没能复制，请手动记下 umuo.app',
       afterDownload: {
         title: '下载已开始，接下来：',
         steps: [

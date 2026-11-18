@@ -36,12 +36,6 @@ export interface PlatformCard {
   statusLabel: string
   /** 按钮下方的补充说明：未公证的预览版首次打开怎么放行 */
   note: string
-  /** 触屏设备上替代下载按钮的说明：这是 Mac 应用 */
-  mobileNote: string
-  /** 触屏设备上「复制网址」按钮的文字、复制成功与失败后的文字 */
-  copyLink: string
-  copied: string
-  copyFailed: string
   /** 点了下载之后就地出现的收尾：下载后接下来要做的几步 */
   afterDownload: {
     title: string

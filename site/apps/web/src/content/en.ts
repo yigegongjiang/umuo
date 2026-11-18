@@ -73,10 +73,6 @@ export const en: SiteContent = {
       actionLabel: 'Download for macOS',
       statusLabel: 'Preview',
       note: 'Not notarized yet. If macOS blocks it, open Privacy & Security and click “Open Anyway”.',
-      mobileNote: 'umuo is a Mac app. Open umuo.app on your Mac to download it.',
-      copyLink: 'Copy link',
-      copied: 'Copied',
-      copyFailed: "Couldn't copy. Please note down umuo.app",
       afterDownload: {
         title: 'Your download has started. Next:',
         steps: [
