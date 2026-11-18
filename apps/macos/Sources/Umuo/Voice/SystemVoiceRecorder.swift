@@ -29,7 +29,8 @@ enum MicrophoneAccess {
 /// 正式的录音器：`AVAudioEngine` 的输入节点（系统当前的默认输入设备）→ 转成 16 kHz 单声道 Float32 → 追加写进临时文件。
 ///
 /// - 设备：跟随系统的默认输入设备；没有输入设备（格式采样率为 0）报 `noInputDevice`。
-///   录音中途换设备或拔掉耳机，音频引擎会发配置变更通知并停下——按 `noInputDevice` 回报，这一句作废，不悄悄录到一半。
+/// - 配置变更：蓝牙耳机一开麦就会从听歌切到通话模式，输入格式随之改变，引擎发通知并停下。
+///   这时按新格式重新接上、继续写同一个文件；重新接不上（设备拔了、格式为 0）才按 `noInputDevice` 回报。
 /// - 只在主线程上开关；采样在音频线程上转换并写盘（`Writer` 自己加锁）。
 @MainActor
 final class SystemVoiceRecorder: VoiceRecording {
@@ -66,18 +67,43 @@ final class SystemVoiceRecorder: VoiceRecording {
         if let active { teardown(active) }
 
         let engine = AVAudioEngine()
+        let writer = Writer(output: output)
+        do {
+            try Self.attach(engine, writer)
+        } catch {
+            writer.finish()
+            throw error
+        }
+        let observer = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, let active = self.active, active.session == session else { return }
+                engine.inputNode.removeTap(onBus: 0)
+                engine.stop()
+                do {
+                    try Self.attach(engine, writer)
+                } catch {
+                    self.teardown(active)
+                    self.onFailure?(session, error as? VoiceFault
+                        ?? VoiceFault(kind: .noInputDevice, detail: "输入设备在录音中途发生变化：\(error)"))
+                }
+            }
+        }
+        active = Active(session: session, engine: engine, writer: writer, observer: observer)
+    }
+
+    /// 按输入节点当前的格式装 tap、换转换器、启动引擎。首次开麦与配置变更后重接共用。
+    private static func attach(_ engine: AVAudioEngine, _ writer: Writer) throws {
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else {
             throw VoiceFault(kind: .noInputDevice, detail: "没有可用的输入设备")
         }
-        guard let target = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: VoiceAudioFiles.sampleRate,
-                                         channels: 1, interleaved: false),
-            let converter = AVAudioConverter(from: format, to: target)
-        else {
+        guard let converter = AVAudioConverter(from: format, to: Writer.target) else {
             throw VoiceFault(kind: .recording, detail: "无法把 \(format) 转成 16 kHz 单声道")
         }
-        let writer = Writer(output: output, converter: converter, target: target)
+        writer.use(converter)
         input.installTap(onBus: 0, bufferSize: 4096, format: format) { buffer, _ in writer.consume(buffer) }
         engine.prepare()
         do {
@@ -86,16 +112,6 @@ final class SystemVoiceRecorder: VoiceRecording {
             input.removeTap(onBus: 0)
             throw VoiceFault(kind: .recording, detail: "音频引擎启动失败：\(error)")
         }
-        let observer = NotificationCenter.default.addObserver(
-            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self, let active = self.active, active.session == session else { return }
-                self.teardown(active)
-                self.onFailure?(session, VoiceFault(kind: .noInputDevice, detail: "输入设备在录音中途发生变化"))
-            }
-        }
-        active = Active(session: session, engine: engine, writer: writer, observer: observer)
     }
 
     func stop(session: UInt64) async throws -> UInt64 {
@@ -127,9 +143,11 @@ final class SystemVoiceRecorder: VoiceRecording {
     /// 音频线程上的转换与写盘。
     private final class Writer: @unchecked Sendable {
         private let lock = NSLock()
+        static let target = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: VoiceAudioFiles.sampleRate,
+                                          channels: 1, interleaved: false)!
         private let output: FileHandle
-        private let converter: AVAudioConverter
-        private let target: AVAudioFormat
+        private var converter: AVAudioConverter?
+        private let target = Writer.target
         private var closed = false
         private var written = 0
         private var failure: Error?
@@ -137,16 +155,19 @@ final class SystemVoiceRecorder: VoiceRecording {
         var samples: Int { lock.withLock { written } }
         var error: Error? { lock.withLock { failure } }
 
-        init(output: FileHandle, converter: AVAudioConverter, target: AVAudioFormat) {
+        init(output: FileHandle) {
             self.output = output
-            self.converter = converter
-            self.target = target
+        }
+
+        /// 换上新格式的转换器（配置变更后输入格式可能不同）。
+        func use(_ converter: AVAudioConverter) {
+            lock.withLock { self.converter = converter }
         }
 
         func consume(_ buffer: AVAudioPCMBuffer) {
             lock.lock()
             defer { lock.unlock() }
-            guard !closed, failure == nil else { return }
+            guard !closed, failure == nil, let converter, buffer.format == converter.inputFormat else { return }
             let ratio = target.sampleRate / buffer.format.sampleRate
             let capacity = AVAudioFrameCount((Double(buffer.frameLength) * ratio).rounded(.up)) + 32
             guard let converted = AVAudioPCMBuffer(pcmFormat: target, frameCapacity: capacity) else { return }
