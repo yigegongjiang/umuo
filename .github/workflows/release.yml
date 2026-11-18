@@ -98,7 +98,16 @@ jobs:
           if gh release view "v$version" >/dev/null 2>&1; then echo "Release v$version 已存在" >&2; exit 1; fi
           if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then echo "tag v$version 已存在" >&2; exit 1; fi
           # 新版本必须高于当前 Latest：手动填了更低的版本号会被标成 Latest，官网下载与 Sparkle 跟着回退
-          latest=$(gh release view --json tagName --jq '.tagName' 2>/dev/null | sed 's/^v//' || true)
+          if latest=$(gh release view --json tagName --jq '.tagName'); then
+            latest=${latest#v}
+            echo "$latest" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+          else
+            published=$(gh release list --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // empty')
+            if [ -n "$published" ]; then
+              echo "无法核验当前 Latest 版本" >&2
+              exit 1
+            fi
+          fi
           if [ -n "$latest" ] && [ "$(printf '%s\n%s\n' "$latest" "$version" | sort -V | tail -1)" != "$version" ]; then
             echo "版本 $version 不高于当前 Latest $latest" >&2; exit 1
           fi
