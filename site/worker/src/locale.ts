@@ -81,8 +81,15 @@ export function pickLocale(request: Request): Locale {
  */
 async function localePage(locale: Locale, request: Request, env: Env): Promise<Response | null> {
   try {
-    const asset = await env.ASSETS.fetch(new Request(new URL(`/${locale}/`, request.url)))
-    return asset.ok ? asset : null
+    const headers = new Headers()
+    for (const name of ['if-none-match', 'if-modified-since']) {
+      const value = request.headers.get(name)
+      if (value !== null) headers.set(name, value)
+    }
+    const asset = await env.ASSETS.fetch(
+      new Request(new URL(`/${locale}/`, request.url), { method: request.method, headers }),
+    )
+    return asset.ok || asset.status === 304 ? asset : null
   } catch {
     return null
   }
@@ -103,12 +110,12 @@ export async function handlePage(request: Request, env: Env): Promise<Response> 
     asset = await localePage(locale, request, env)
   }
   if (!asset) {
-    return new Response('Service temporarily unavailable', {
+    return new Response(request.method === 'HEAD' ? null : 'Service temporarily unavailable', {
       status: 503,
       headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' },
     })
   }
-  const response = new Response(asset.body, asset)
+  const response = new Response(request.method === 'HEAD' ? null : asset.body, asset)
   // 同一个地址按访客返回不同语言：缓存必须按这两个请求头区分，且每次回源确认
   response.headers.set('vary', 'Cookie, Accept-Language')
   response.headers.set('cache-control', 'no-cache')

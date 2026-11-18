@@ -205,9 +205,13 @@ function DemoStage({ mode, delay }: { mode: DemoMode; delay?: StreamDelay }) {
     return (
       <>
         <p className="source-text">
-          <mark className="selection">{mode.before}</mark>
+          <mark className="selection" lang={mode.beforeLang}>
+            {mode.before}
+          </mark>
         </p>
-        <div className="demo-popover translation-text">{result}</div>
+        <div className="demo-popover translation-text" lang={mode.afterLang}>
+          {result}
+        </div>
       </>
     )
   }
@@ -215,8 +219,12 @@ function DemoStage({ mode, delay }: { mode: DemoMode; delay?: StreamDelay }) {
   if (mode.id === 'ocr') {
     return (
       <>
-        <p className="demo-shot source-text">{mode.before}</p>
-        <div className="demo-popover translation-text">{result}</div>
+        <p className="demo-shot source-text" lang={mode.beforeLang}>
+          {mode.before}
+        </p>
+        <div className="demo-popover translation-text" lang={mode.afterLang}>
+          {result}
+        </div>
       </>
     )
   }
@@ -226,8 +234,12 @@ function DemoStage({ mode, delay }: { mode: DemoMode; delay?: StreamDelay }) {
     return (
       <>
         <div className="demo-field demo-field-replace">
-          <p className="demo-replaced">{mode.before}</p>
-          <p className="translation-text">{result}</p>
+          <p className="demo-replaced" lang={mode.beforeLang}>
+            {mode.before}
+          </p>
+          <p className="translation-text" lang={mode.afterLang}>
+            {result}
+          </p>
         </div>
         {note}
       </>
@@ -243,9 +255,13 @@ function DemoStage({ mode, delay }: { mode: DemoMode; delay?: StreamDelay }) {
             <span key={index} style={{ '--h': `${height}%`, '--i': index } as CSSProperties} />
           ))}
         </div>
-        <p className="source-text">{mode.before}</p>
+        <p className="source-text" lang={mode.beforeLang}>
+          {mode.before}
+        </p>
       </div>
-      <p className="demo-field translation-text">{result}</p>
+      <p className="demo-field translation-text" lang={mode.afterLang}>
+        {result}
+      </p>
       {note}
     </>
   )

@@ -64,8 +64,10 @@ export interface DemoMode {
   hint: string
   /** 原文 / 草稿 / 口述 */
   before: string
+  beforeLang: string
   /** 译文 / 替换结果 / 整理后的文字 */
   after: string
+  afterLang: string
 }
 
 export interface HeroContent {

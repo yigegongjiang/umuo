@@ -19,7 +19,6 @@ export function ThemeToggle({
       className="btn-ghost h-9 w-9 min-w-9 p-0"
       aria-label={labels.themeLabel}
       title={theme === 'dark' ? labels.themeToLight : labels.themeToDark}
-      suppressHydrationWarning
     >
       <ThemeContrastIcon className="h-[18px] w-[18px]" />
     </button>
