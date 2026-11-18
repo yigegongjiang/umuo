@@ -112,6 +112,12 @@ pub struct StreamOutcome {
     stopped: bool,
 }
 
+/// 分片共用的输出口：首片独占输出期间记下首字时刻。
+struct ChunkSink<'a> {
+    on_delta: &'a mut (dyn FnMut(&str) + Send),
+    first_token_ms: Option<u64>,
+}
+
 /// 分片并发翻译（PRD §6.3）：并发跑多个请求，按原文顺序输出增量。
 ///
 /// 三个要点：
@@ -142,7 +148,11 @@ pub async fn stream_chunks(
     let mut merged: Vec<String> = Vec::with_capacity(requests.len());
     let mut cursor = 0usize;
     let mut usage = TokenUsage::default();
-    let mut first_token_ms: Option<u64> = None;
+    // 首片独占输出，之后才按顺序发布其他分片。锁只用于同步输出，从不跨 await。
+    let sink = std::sync::Mutex::new(ChunkSink {
+        on_delta,
+        first_token_ms: None,
+    });
     let mut truncated = false;
     // 先把每片的 future 建好（async 块不被 poll 就不会发请求），再交给
     // `buffer_unordered`：它按顺序启动、按完成顺序产出，同时在途的不超过上限；
@@ -158,11 +168,24 @@ pub async fn stream_chunks(
             api_key: target.api_key,
             chat: request,
         };
+        let sink = &sink;
         futures.push(async move {
             let mut buffer = String::new();
             let outcome = {
-                let mut sink = |delta: &str| buffer.push_str(delta);
-                stream_chat(client, &chunk_target, options, &mut sink).await
+                let mut emit = |delta: &str| {
+                    if index == 0 {
+                        let mut output = sink.lock().expect("分片输出锁");
+                        if output.first_token_ms.is_none() {
+                            output.first_token_ms = Some(started.elapsed().as_millis() as u64);
+                            if let Some(separator) = separators.first().filter(|s| !s.is_empty()) {
+                                (output.on_delta)(separator);
+                            }
+                        }
+                        (output.on_delta)(delta);
+                    }
+                    buffer.push_str(delta);
+                };
+                stream_chat(client, &chunk_target, options, &mut emit).await
             };
             (index, buffer, outcome)
         });
@@ -179,9 +202,6 @@ pub async fn stream_chunks(
         usage.estimated |= outcome.usage.estimated;
         // 截断同理：任何一片没说完，合并后的全文就不完整。
         truncated |= outcome.truncated;
-        if first_token_ms.is_none() {
-            first_token_ms = outcome.first_token_ms;
-        }
 
         // 用**流出来的文本**而不是 outcome.text：两者应当一致，
         // 但如果传输层将来改了拼接方式，这里以用户实际看到的为准。
@@ -192,14 +212,26 @@ pub async fn stream_chunks(
         // 补分隔符用的是**全文序号**，不是批内序号（见 chunk::with_separators）。
         let already_out = cursor;
         let ready = crate::chunk::drain_in_order(&mut pending, &mut cursor);
-        for text in crate::chunk::with_separators(already_out, separators, ready) {
-            merged.push(text.clone());
-            on_delta(&text);
+        for (offset, text) in crate::chunk::with_separators(already_out, separators, ready)
+            .into_iter()
+            .enumerate()
+        {
+            let mut output = sink.lock().expect("分片输出锁");
+            // 首片已经边流边输出过，只有它一个字都没流出来时才在这里补发
+            let first_chunk_streamed = already_out + offset == 0 && output.first_token_ms.is_some();
+            if !first_chunk_streamed {
+                if !text.is_empty() && output.first_token_ms.is_none() {
+                    output.first_token_ms = Some(started.elapsed().as_millis() as u64);
+                }
+                (output.on_delta)(&text);
+            }
+            merged.push(text);
         }
     }
 
     debug_assert_eq!(completed, count, "每个分片都应当有结果或提前返回错误");
 
+    let first_token_ms = sink.lock().expect("分片输出锁").first_token_ms;
     Ok(StreamOutcome {
         // 必须用单独收集的 `merged`：`drain_in_order` 是 `take()` 走的，
         // 循环结束后 `pending` 已经全空，从它拼会得到空串。

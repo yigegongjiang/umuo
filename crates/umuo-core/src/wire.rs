@@ -447,8 +447,11 @@ pub fn parse_stream_event(protocol: Protocol, data: &str) -> Vec<StreamEvent> {
 
     let value: serde_json::Value = match serde_json::from_str(data) {
         Ok(v) => v,
-        // 单条事件解析失败不废掉整条流：跳过它，后面的增量照样能显示。
-        Err(_) => return Vec::new(),
+        Err(_) => {
+            return vec![StreamEvent::Error(CoreError::BadResponse {
+                detail: "流式响应包含无法解析的数据".to_string(),
+            })];
+        }
     };
 
     // 文本在前、用量在后：顺序不影响累计结果，但让首字延迟按文本到达时刻算。
@@ -541,12 +544,15 @@ pub fn parse_stream_event(protocol: Protocol, data: &str) -> Vec<StreamEvent> {
                     })];
                 }
             }
-            let mut events = text_and_usage(
-                value
-                    .pointer("/candidates/0/content/parts/0/text")
-                    .and_then(|v| v.as_str()),
-                usage_from_gemini(&value),
-            );
+            let text: String = value
+                .pointer("/candidates/0/content/parts")
+                .and_then(|parts| parts.as_array())
+                .into_iter()
+                .flatten()
+                .filter(|part| part.get("thought").and_then(|v| v.as_bool()) != Some(true))
+                .filter_map(|part| part.get("text").and_then(|v| v.as_str()))
+                .collect();
+            let mut events = text_and_usage(Some(&text), usage_from_gemini(&value));
             // Gemini 没有结束哨兵，停止原因写在最后一块的 finishReason 里。
             match value
                 .pointer("/candidates/0/finishReason")
@@ -975,8 +981,11 @@ mod tests {
             ),
             vec![StreamEvent::Delta("你".to_string())]
         );
-        // 无法解析的事件被跳过，而不是让整条流中断。
-        assert!(parse_stream_event(Protocol::OpenAi, "{oops").is_empty());
+        // 无法解析的事件如实报错，不静默跳过。
+        assert!(matches!(
+            parse_stream_event(Protocol::OpenAi, "{oops").as_slice(),
+            [StreamEvent::Error(CoreError::BadResponse { .. })]
+        ));
     }
 
     #[test]
@@ -1028,7 +1037,7 @@ mod tests {
         // Gemini 每块都带 usageMetadata；只看文本的话用量永远是 0。
         let events = parse_stream_event(
             Protocol::Gemini,
-            r#"{"candidates":[{"content":{"parts":[{"text":"你好"}]}}],"usageMetadata":{"promptTokenCount":7,"candidatesTokenCount":8}}"#,
+            r#"{"candidates":[{"content":{"parts":[{"text":"思考","thought":true},{"text":"你"},{"text":"好"}]}}],"usageMetadata":{"promptTokenCount":7,"candidatesTokenCount":8}}"#,
         );
         assert_eq!(
             events,
