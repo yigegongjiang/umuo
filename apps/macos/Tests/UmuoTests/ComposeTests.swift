@@ -20,13 +20,13 @@ private final class FakeBackend: ComposeBackend {
         return translateFailure
     }
 
-    func commit(_ text: String, paste: Bool, owner: String?) async -> String? {
+    func commit(_ text: String, paste: Bool, owner: String?) async -> (delivered: Bool, notice: String?) {
         commits.append((text, paste, owner))
-        return commitFailure
+        return (commitFailure == nil, commitFailure)
     }
 
     func hideCompose() { hidden += 1 }
-    func recordCommitted(_ requestId: UInt64) { recorded.append(requestId) }
+    func recordCommitted(_ requestId: UInt64) async { recorded.append(requestId) }
     func speak(_ text: String) { spoken.append(text) }
 }
 
@@ -288,6 +288,19 @@ struct ComposeSessionTests {
         #expect(session.settled)
     }
 
+    @Test func 新请求发出但尚未开始时不能提交旧译文() async {
+        let (session, backend) = session()
+        await translate(session, id: 1)
+        session.input = "下一版"
+        session.translateNow()
+        #expect(backend.translated.last?.text == "下一版")
+        #expect(!session.settled)
+        session.commit(paste: false)
+        await settle()
+        #expect(backend.commits.isEmpty)
+        #expect(backend.recorded.isEmpty)
+    }
+
     @Test func 关掉自动翻译后改了原文或语言都不能提交旧译文() async {
         let (session, _) = session()
         await translate(session, id: 1)
@@ -307,6 +320,7 @@ struct ComposeSessionTests {
         await translate(session, id: 1)
         session.commit(paste: true)
         await settle()
+        #expect(backend.recorded.isEmpty)
         #expect(session.notice == "提交失败：译文已复制到剪贴板，但原来的应用没能回到前台，没有自动粘贴。可以手动 ⌘V。")
     }
 

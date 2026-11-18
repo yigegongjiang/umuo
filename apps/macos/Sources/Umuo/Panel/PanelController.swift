@@ -44,7 +44,14 @@ final class PanelController: PanelBackend {
     ///
     /// 归属**在显示之后**取：那是一次 AX 往返，只服务于 500 ms 一轮的看门狗，排在前面就是白白拖慢唤起。
     /// 取到之前先清空：清空 = 看门狗不收起；沿用上一次的归属的话，换了应用划词会被当场判成「切走」。
+    func setWriteTarget(_ target: String?, owner: String?) {
+        showGeneration += 1
+        session.writeTarget = owner == nil ? nil : target
+        session.owner = owner
+    }
+
     func showNearCursor() {
+        session.writeTarget = nil
         refreshAppearance()
         place()
         window.orderFrontRegardless()
@@ -66,6 +73,7 @@ final class PanelController: PanelBackend {
     /// 无论开没开，归属都重设为本应用自己：原文不来自任何应用，没有可替换的原文；
     /// 也不能沿用上一次划词的归属（「替换原文」会把 OCR 译文写进那个应用）。先写归属再显示。
     func ensureShown() {
+        session.writeTarget = nil
         showGeneration += 1
         // 浮窗换成了这次的内容：还没取完的划词按键不能再把它挪走、把归属改回某个应用
         triggers.invalidate()
@@ -80,6 +88,7 @@ final class PanelController: PanelBackend {
     }
 
     func hidePanel() {
+        triggers.invalidate()
         window.orderOut(nil)
         escape.release(.panel)
         watchdog?.cancel()
@@ -180,7 +189,7 @@ final class PanelController: PanelBackend {
     ///
     /// 登记与取消（`cancelTranslation`）都在主线程上同步做：它们只是加锁改一张表。放进各自的后台任务就没有先后，
     /// Esc 之后立刻重试时，迟到的取消可能打掉新请求；连着两次重译，旧的一次也可能后登记而赢。
-    func startTranslation(_ request: TranslateRequest, guardToken: String? = nil, ticketId: UInt64? = nil) {
+    func startTranslation(_ request: TranslateRequest, writeTarget: String? = nil, ticketId: UInt64? = nil) {
         guard let engine = app.engine else {
             showNotice(app.engineStatus, permission: nil)
             return
@@ -194,7 +203,7 @@ final class PanelController: PanelBackend {
         Task.detached {
             // 被顶掉了：收掉这个流，等事件的那个 Task 才会结束
             guard let handle = engine.translateWithTicket(request: request, ticketId: ticketId,
-                                                          guardToken: guardToken, sink: sink)
+                                                          writeTarget: writeTarget, sink: sink)
             else { return sink.finish() }
             sink.attach(handle)
         }
@@ -223,7 +232,10 @@ final class PanelController: PanelBackend {
 
     // MARK: - PanelBackend
 
-    func translate(_ request: TranslateRequest) { startTranslation(request) }
+    func translate(_ request: TranslateRequest) {
+        triggers.invalidate()
+        startTranslation(request)
+    }
 
     func abandonPendingTrigger() { triggers.invalidate() }
 
@@ -248,9 +260,11 @@ final class PanelController: PanelBackend {
 
     func stopSpeaking() { app.speech.stop() }
 
-    func replace(_ text: String, original: String, owner: String?) async -> String? {
+    func replace(_ text: String, original: String, owner: String?, target: String) async -> String? {
         let t = session.t
-        return await Task.detached { Self.replaceSource(text, original: original, owner: owner, t: t) }.value
+        return await Task.detached {
+            Self.replaceSource(text, original: original, owner: owner, t: t, target: target)
+        }.value
     }
 
     func openCompose(text: String, translation: String?, owner: String?) {
@@ -278,7 +292,7 @@ final class PanelController: PanelBackend {
     ///
     /// 前台查询、切前台、AX 与受控粘贴可注入：测试换成假的，不碰真实系统。
     nonisolated static func replaceSource(
-        _ text: String, original: String, owner: String?, t: Translate,
+        _ text: String, original: String, owner: String?, t: Translate, target: String? = nil,
         frontmost: () -> String? = FrontmostApp.liveToken,
         refocus: (String) -> Void = ReplaceSelection.refocus,
         probe: FocusedTextProbing = AXTextProbe(), paster: ControlledPaste = ControlledPaste()
@@ -293,7 +307,7 @@ final class PanelController: PanelBackend {
         if let refusal = replaceTargetError(owner: owner, current: frontmost()) { return refusal }
         guard let owner else { return t("panel.replaceUnknownSource") }
         do {
-            try ReplaceSelection.replace(text, original: original, owner: owner, probe: probe, paster: paster,
+            try ReplaceSelection.replace(text, original: original, owner: owner, target: target, probe: probe, paster: paster,
                                          frontmost: frontmost)
         } catch {
             return writeBackFailedMessage(detail: t(error.text))

@@ -210,9 +210,9 @@ final class VoiceController {
 
     private func startRecording(_ session: UInt64) {
         // 录音一开始就预热模型：加载与说话重叠，松开后只剩推理的时间。
-        transcriber.prepare()
         // 交付目标在按下的这一刻记：用户此时正对着要输入的那个框（PRD §5.11）
         deliverer?.capture(session: session)
+        transcriber.prepare()
         let output: FileHandle
         do {
             output = try files.create(session)

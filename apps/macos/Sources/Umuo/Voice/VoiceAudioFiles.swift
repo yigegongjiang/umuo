@@ -4,16 +4,39 @@ import Foundation
 ///
 /// 格式是裸的 16 kHz 单声道 Float32 小端采样（`.f32`），正好是转写引擎要的输入，不用再解码。
 /// 一个会话一个文件，名字带会话号：状态机的 `CleanupAudio` 按会话号删，迟到的清理也删得准。
-/// 目录在系统临时目录下、权限 0700，文件 0600；启动时 `sweep` 掉上次崩溃或强退留下的文件。
+/// 每个进程用独立的临时目录（权限 0700），文件权限 0600；启动时只清理已退出进程的遗留文件。
 struct VoiceAudioFiles: Sendable {
     /// 16 kHz：Qwen3-ASR 的原生采样率（`transcribe_capabilities.native_sample_rate`）。
     static let sampleRate: Double = 16000
 
     let directory: URL
 
-    static let standard = VoiceAudioFiles(
-        directory: FileManager.default.temporaryDirectory.appendingPathComponent("umuo-voice", isDirectory: true)
-    )
+    private static let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("umuo-voice", isDirectory: true)
+
+    static let standard = VoiceAudioFiles(directory: root.appendingPathComponent(
+        "\(ProcessInfo.processInfo.processIdentifier)-\(UUID().uuidString)", isDirectory: true
+    ))
+
+    static func sweepAbandoned(in root: URL = root) {
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []
+        for name in names {
+            let url = root.appendingPathComponent(name)
+            if name.hasSuffix(".f32") {
+                // 旧版把音频放在共享根目录；留出时间给正在退出的旧实例。
+                let modified = try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+                if let modified, Date().timeIntervalSince(modified) > 3600 {
+                    try? FileManager.default.removeItem(at: url)
+                }
+                continue
+            }
+            let parts = name.split(separator: "-", maxSplits: 1)
+            guard parts.count == 2, let pid = pid_t(parts[0]), pid > 0,
+                  UUID(uuidString: String(parts[1])) != nil, kill(pid, 0) == -1, errno == ESRCH
+            else { continue }
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
 
     func url(for session: UInt64) -> URL {
         directory.appendingPathComponent("session-\(session).f32")
@@ -32,14 +55,6 @@ struct VoiceAudioFiles: Sendable {
     /// 删掉这一会话的音频。幂等：不存在也不报错。
     func remove(_ session: UInt64) {
         try? FileManager.default.removeItem(at: url(for: session))
-    }
-
-    /// 启动时清掉目录里所有遗留音频（上次崩溃、强退、断电）。
-    func sweep() {
-        let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
-        for name in names where name.hasSuffix(".f32") {
-            try? FileManager.default.removeItem(at: directory.appendingPathComponent(name))
-        }
     }
 
     /// 目录里还剩几个音频文件（测试与 selftest 用）。

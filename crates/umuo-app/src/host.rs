@@ -22,9 +22,15 @@ pub trait Host: Send + Sync {
     fn frontmost_app_name(&self) -> Option<String>;
 
     /// 当前写回目标的不透明身份（macOS 上包含聚焦控件身份）。写回守卫拿它与取词时记下的比对。
-    fn frontmost_app_token(&self) -> Option<String>;
+    fn write_target_token(&self) -> Option<String>;
 
     /// 静默翻译的写回：按读取时的来源替换选区或整个输入框。
-    /// 只在翻译成功、且守卫放行之后调用一次；没有 ⌘V 兜底，写不进去就如实报告。
-    fn write_back(&self, source: FocusSource, original: &str, text: &str) -> Result<(), String>;
+    /// 宿主用 `target` 核验实际写入的控件，没有 ⌘V 兜底，写不进去就如实报告。
+    fn write_back(
+        &self,
+        source: FocusSource,
+        original: &str,
+        text: &str,
+        target: Option<&str>,
+    ) -> Result<(), String>;
 }

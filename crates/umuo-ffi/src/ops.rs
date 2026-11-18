@@ -401,10 +401,16 @@ mod tests {
         fn frontmost_app_name(&self) -> Option<String> {
             None
         }
-        fn frontmost_app_token(&self) -> Option<String> {
+        fn write_target_token(&self) -> Option<String> {
             None
         }
-        fn write_back(&self, _: FocusSource, _: String, _: String) -> Result<(), HostFailure> {
+        fn write_back(
+            &self,
+            _: FocusSource,
+            _: String,
+            _: String,
+            _: Option<String>,
+        ) -> Result<(), HostFailure> {
             Err(HostFailure::Failed {
                 detail: "这些测试不写回".into(),
             })

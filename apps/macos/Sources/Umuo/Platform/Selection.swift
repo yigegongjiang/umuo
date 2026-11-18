@@ -7,7 +7,8 @@ import UmuoCore
 struct FocusText: Equatable {
     let text: String
     let source: FocusSource
-    var guardToken: String? = nil
+    var writeTarget: String? = nil
+    var owner: String? = nil
 }
 
 /// 取词失败。给用户看的话是文案键（`text`），由浮窗按界面语言取成句子。
@@ -36,14 +37,23 @@ enum SelectionError: UserFacingError, Equatable {
 enum Selection {
     /// 读取当前选中的文本：先走只读的 AX，拿不到（或只有空白）才降级到模拟 ⌘C。
     /// Electron / Java / 远程桌面里的 App 常常走降级。
-    static func readSelection() throws(SelectionError) -> String {
+    static func readSelection() throws(SelectionError) -> String { try readPanelSelection().text }
+
+    static func readPanelSelection() throws(SelectionError) -> FocusText {
         guard AXIsProcessTrusted() else { throw .permissionDenied }
-        if let text = AX.focusedElement().flatMap({ AX.string($0, kAXSelectedTextAttribute as CFString) }),
+        let probe = AXTextProbe()
+        let element = probe.focusedElement()
+        if probe.secureInput(element) { throw .other(UserText("error.secureInput")) }
+        let target = probe.targetToken(element, requiresRange: true)
+        let owner = FrontmostApp.liveToken()
+        if let text = element.flatMap({ AX.string($0, kAXSelectedTextAttribute as CFString) }),
            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
-            return text
+            let confirmed = probe.focusStillMatches(target, requiresRange: true)
+            return FocusText(text: text, source: .selection, writeTarget: confirmed ? target : nil, owner: owner)
         }
-        return try ClipboardFallback().read()
+        // 无法证明选区身份时仍可翻译，但该结果没有写回目标。
+        return FocusText(text: try ClipboardFallback().read(), source: .selection, owner: owner)
     }
 
     /// 读取「该被翻译的文本」：优先选区，没有选区时读整个可编辑区域（PRD §5.4）。
@@ -56,12 +66,19 @@ enum Selection {
         // 密码框一个字都不读：读出来的可能是掩码，发给供应商之后还会被写回、覆盖密码。
         if AX.isSecureInput(element) { throw .other(UserText("error.secureInput")) }
 
+        let probe = AXTextProbe()
+        let target = probe.targetToken(element)
+        let owner = FrontmostApp.liveToken()
+
         // 选中了什么就翻什么。写不回去的话先说清楚，免得白翻一遍。
         if let text = element.flatMap({ AX.string($0, kAXSelectedTextAttribute as CFString) }),
            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
             try checkWritable(.selection, element)
-            return FocusText(text: text, source: .selection, guardToken: FrontmostApp.focusToken(element))
+            guard let target, probe.focusStillMatches(target, requiresRange: true) else {
+                throw .other(UserText("error.targetChanged"))
+            }
+            return FocusText(text: text, source: .selection, writeTarget: target, owner: owner)
         }
 
         // 没选中就是「把整个输入框翻一遍」。**先确认整框可写再读**：终端的 AXValue 是整段滚动缓冲区，
@@ -70,7 +87,10 @@ enum Selection {
         guard let text = element.flatMap({ AX.string($0, kAXValueAttribute as CFString) }),
               !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else { throw .noSelection }
-        return FocusText(text: text, source: .wholeField, guardToken: FrontmostApp.focusToken(element))
+        guard let target, probe.focusStillMatches(target) else {
+            throw .other(UserText("error.targetChanged"))
+        }
+        return FocusText(text: text, source: .wholeField, writeTarget: target, owner: owner)
     }
 
     private static func checkWritable(_ source: FocusSource, _ element: AXUIElement?) throws(SelectionError) {

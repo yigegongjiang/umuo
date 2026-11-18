@@ -173,7 +173,7 @@ async fn translate(
     // 单选一个词（≤3 个词）时走词卡（PRD §5.2），其余的走普通翻译。
     // 判定与 Prompt 都来自核心层的同一份实现，客户端不重复写一遍。
     // 原地替换要把结果写回用户的输入框：那里要的是译文，词卡 JSON 绝不能写进去。
-    let word_mode = !mode.write_back() && umuo_core::word_card::is_word_mode(text);
+    let word_mode = mode == Mode::Selection && umuo_core::word_card::is_word_mode(text);
     // 写回时原文已是目标语言就原样输出，不能像浮窗那样给一句释义（会替换掉用户的原文）。
     let build_request = if mode.write_back() {
         prompt::build_write_back_request
@@ -401,11 +401,11 @@ fn write_back_focus(
 ) -> Result<(), CoreError> {
     // 翻译花了几秒，用户完全可能已经切到别的窗口。这时写回等于把译文打进
     // 另一个应用——宁可不替换，也不能写错地方。
-    if !target_still_matches(target, host.frontmost_app_token()) {
+    if !target_still_matches(target, host.write_target_token()) {
         return Err(CoreError::WriteTargetChanged);
     }
 
-    host.write_back(source, original, text)
+    host.write_back(source, original, text, target)
         .map_err(|detail| CoreError::WriteBackFailed { detail })
 }
 

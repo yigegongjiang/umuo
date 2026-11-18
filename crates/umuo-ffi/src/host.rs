@@ -56,7 +56,7 @@ impl From<AppFocusSource> for FocusSource {
 /// Swift 端的宿主。语义见 `umuo_app::Host` 的同名方法。
 ///
 /// 都在 tokio 工作线程上同步调用，要快：前台应用的名字可以读加锁的缓存；
-/// 但 `frontmost_app_token` 必须调用时现查（AX 系统级聚焦控件的身份），
+/// 但 `write_target_token` 必须调用时现查（AX 系统级聚焦控件的身份），
 /// 它是写回守卫的唯一依据，读晚到的 NSWorkspace 缓存会把译文写进刚切过去的应用。
 /// **不要等用户操作**（例如会弹 Keychain 授权框的读取）：调用期间这一次请求整个停住，取消也要等它返回。
 #[uniffi::export(foreign)]
@@ -66,13 +66,14 @@ pub trait HostBridge: Send + Sync {
     /// 前台应用的显示名（历史里的「来源应用」）。
     fn frontmost_app_name(&self) -> Option<String>;
     /// 当前写回目标的不透明身份。写回守卫拿它与取词时记下的比对。调用时现查 AX，不读缓存。
-    fn frontmost_app_token(&self) -> Option<String>;
+    fn write_target_token(&self) -> Option<String>;
     /// 静默翻译的写回。只在翻译成功、守卫放行之后调用一次。
     fn write_back(
         &self,
         source: FocusSource,
         original: String,
         text: String,
+        target: Option<String>,
     ) -> Result<(), HostFailure>;
 }
 
@@ -91,12 +92,21 @@ impl umuo_app::Host for BridgeHost {
     fn frontmost_app_name(&self) -> Option<String> {
         block_in_place(|| self.0.frontmost_app_name())
     }
-    fn frontmost_app_token(&self) -> Option<String> {
-        block_in_place(|| self.0.frontmost_app_token())
+    fn write_target_token(&self) -> Option<String> {
+        block_in_place(|| self.0.write_target_token())
     }
-    fn write_back(&self, source: AppFocusSource, original: &str, text: &str) -> Result<(), String> {
+    fn write_back(
+        &self,
+        source: AppFocusSource,
+        original: &str,
+        text: &str,
+        target: Option<&str>,
+    ) -> Result<(), String> {
         let (original, text) = (original.to_string(), text.to_string());
-        block_in_place(|| self.0.write_back(source.into(), original, text))
-            .map_err(|e| e.to_string())
+        block_in_place(|| {
+            self.0
+                .write_back(source.into(), original, text, target.map(str::to_owned))
+        })
+        .map_err(|e| e.to_string())
     }
 }

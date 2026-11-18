@@ -14,6 +14,16 @@ enum AX {
         return (value as! AXUIElement)
     }
 
+    static func selectedRange(_ element: AXUIElement) -> CFRange? {
+        var value: CFTypeRef?
+        var range = CFRange()
+        guard AXUIElementCopyAttributeValue(element, kAXSelectedTextRangeAttribute as CFString, &value) == .success,
+              let value, CFGetTypeID(value) == AXValueGetTypeID(),
+              AXValueGetValue(value as! AXValue, .cfRange, &range)
+        else { return nil }
+        return range
+    }
+
     /// nil = 问不出来（该 App 不支持这个属性），与「明确不可写」不同：Electron 一类常常问不出来却写得进去。
     static func isSettable(_ element: AXUIElement, _ name: CFString) -> Bool? {
         var settable: DarwinBoolean = false
@@ -53,13 +63,30 @@ protocol FocusedTextProbing: Sendable {
     func string(_ element: AXUIElement, _ attribute: String) -> String?
     /// 密码框或安全输入（见 `AX.isSecureInput`）：是的话一律不写。
     func secureInput(_ element: AXUIElement?) -> Bool
+    func selectedRange(_ element: AXUIElement) -> CFRange?
     /// 写入属性。返回是否成功。
     func write(_ text: String, to element: AXUIElement, _ attribute: String) -> Bool
+}
+
+extension FocusedTextProbing {
+    func selectedRange(_ element: AXUIElement) -> CFRange? { nil }
+
+    func targetToken(_ element: AXUIElement?, requiresRange: Bool = false) -> String? {
+        guard let element, let identity = FrontmostApp.focusToken(element) else { return nil }
+        if let range = selectedRange(element) { return "\(identity):\(range.location):\(range.length)" }
+        return requiresRange ? nil : identity
+    }
+
+    /// 重新取一次焦点：仍是 `token` 记下的那个控件（`requiresRange` 时连选区也相同）才算数。
+    func focusStillMatches(_ token: String?, requiresRange: Bool = false) -> Bool {
+        token != nil && token == targetToken(focusedElement(), requiresRange: requiresRange)
+    }
 }
 
 /// 正式实现：线程安全的 AX C API。
 struct AXTextProbe: FocusedTextProbing {
     func trusted() -> Bool { AXIsProcessTrusted() }
+    func selectedRange(_ element: AXUIElement) -> CFRange? { AX.selectedRange(element) }
     func focusedElement() -> AXUIElement? { AX.focusedElement() }
     func isSettable(_ element: AXUIElement, _ attribute: String) -> Bool? {
         AX.isSettable(element, attribute as CFString)

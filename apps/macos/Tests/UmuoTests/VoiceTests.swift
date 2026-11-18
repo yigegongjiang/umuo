@@ -830,7 +830,9 @@ struct VoiceModelStoreTests {
 
 struct VoiceRulesTests {
     @Test func 临时音频_写入读回与启动清扫() throws {
-        let files = VoiceAudioFiles(directory: scratch("audio"))
+        let root = scratch("audio")
+        let activeID = "\(ProcessInfo.processInfo.processIdentifier)-\(UUID().uuidString)"
+        let files = VoiceAudioFiles(directory: root.appendingPathComponent(activeID))
         for session in [UInt64(1), 2, 3] {
             let handle = try files.create(session)
             let samples: [Float] = [0.5, -0.25]
@@ -843,8 +845,17 @@ struct VoiceRulesTests {
         files.remove(1)
         files.remove(1)
         #expect(files.leftovers() == 2)
-        files.sweep()
-        #expect(files.leftovers() == 0)
+        let legacy = root.appendingPathComponent("session-1.f32")
+        try Data().write(to: legacy)
+        try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSince1970: 0)],
+                                             ofItemAtPath: legacy.path)
+        let liveHandle = try files.create(4)
+        defer { try? liveHandle.close() }
+        VoiceAudioFiles.sweepAbandoned(in: root)
+        #expect(!FileManager.default.fileExists(atPath: legacy.path))
+        try liveHandle.write(contentsOf: Data(repeating: 0, count: 4))
+        #expect(try VoiceAudioFiles.samples(at: files.url(for: 4)) == [0])
+        #expect(files.leftovers() == 3)
         #expect(VoiceAudioFiles.durationMs(samples: 16000) == 1000)
     }
 

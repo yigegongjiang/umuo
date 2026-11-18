@@ -11,8 +11,8 @@ enum EngineSelfTest {
     final class FakeHost: HostBridge {
         func apiKey(providerId: String) throws -> String? { providerId == "openai" ? "sk-selftest" : nil }
         func frontmostAppName() -> String? { "SelfTest" }
-        func frontmostAppToken() -> String? { "pid-selftest" }
-        func writeBack(source: FocusSource, original: String, text: String) throws {
+        func writeTargetToken() -> String? { "pid-selftest" }
+        func writeBack(source: FocusSource, original: String, text: String, target: String?) throws {
             throw HostFailure.Failed(detail: "selftest 不写回")
         }
     }
@@ -87,7 +87,7 @@ enum EngineSelfTest {
 
         // 一次完整的翻译
         let recorder = Recorder()
-        let handle = engine.translate(request: request(sentence), guardToken: nil, sink: recorder)
+        let handle = engine.translate(request: request(sentence), writeTarget: nil, sink: recorder)
         wait { ["done", "error"].contains(recorder.kinds.last ?? "") }
         let text = recorder.snapshot.compactMap { if case let .delta(text) = $0 { text } else { nil } }.joined()
         check("translate", recorder.kinds == ["start", "delta", "delta", "done"] && text == "你好世界",
@@ -101,7 +101,7 @@ enum EngineSelfTest {
             return
         }
         let cancelled = Recorder()
-        let running = engine.translate(request: request(sentence), guardToken: nil, sink: cancelled)
+        let running = engine.translate(request: request(sentence), writeTarget: nil, sink: cancelled)
         wait { cancelled.kinds.contains("delta") || cancelled.kinds.contains("error") }
         running.cancel()
         let deltasAtCancel = cancelled.kinds.filter { $0 == "delta" }.count

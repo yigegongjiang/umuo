@@ -150,6 +150,34 @@ describe('首页地址', () => {
     expect(await en.text()).toContain('<html lang="en">')
   })
 
+  it('按协商语言转发 HEAD 和条件头，并保留 304', async () => {
+    const visited: Request[] = []
+    const env: Env = {
+      ...fakeEnv(),
+      ASSETS: {
+        async fetch(req) {
+          visited.push(req)
+          if (new URL(req.url).pathname === '/en/') return new Response(null, { status: 404 })
+          return new Response(null, { status: 304, headers: { etag: '"zh"' } })
+        },
+      },
+    }
+    const response = await dispatch(
+      new Request('https://umuo.app/', {
+        method: 'HEAD',
+        headers: { 'accept-language': 'en', 'if-none-match': '"zh"' },
+      }),
+      env,
+    )
+    expect(visited.map((req) => [req.method, req.headers.get('if-none-match')])).toEqual([
+      ['HEAD', '"zh"'],
+      ['HEAD', '"zh"'],
+    ])
+    expect(response.status).toBe(304)
+    expect(response.headers.get('content-language')).toBe('zh-cn')
+    expect(response.body).toBeNull()
+  })
+
   it('首页只认 GET / HEAD，其余方法 405 并给出 Allow', async () => {
     const requested: string[] = []
     const response = await dispatch(

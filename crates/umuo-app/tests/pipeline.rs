@@ -61,10 +61,16 @@ impl Host for Fake {
     fn frontmost_app_name(&self) -> Option<String> {
         self.app_name.lock().unwrap().clone()
     }
-    fn frontmost_app_token(&self) -> Option<String> {
+    fn write_target_token(&self) -> Option<String> {
         self.frontmost.lock().unwrap().clone()
     }
-    fn write_back(&self, source: FocusSource, original: &str, text: &str) -> Result<(), String> {
+    fn write_back(
+        &self,
+        source: FocusSource,
+        original: &str,
+        text: &str,
+        _: Option<&str>,
+    ) -> Result<(), String> {
         self.writes
             .lock()
             .unwrap()
@@ -1079,6 +1085,22 @@ async fn compose(env: &Env, text: &str) -> u64 {
     translate::run(&env.core, &Recorder(tx), request, None, ticket).await;
     drain(&mut rx);
     id
+}
+
+#[tokio::test]
+async fn a_single_word_in_compose_emits_copyable_text() {
+    let env = Env::new(|_| sse(&["你好"])).await;
+    let (tx, mut rx) = mpsc::unbounded_channel();
+    let request = Request::with_overrides(
+        "hello",
+        translate::Mode::Compose,
+        translate::Overrides::default(),
+    );
+    let ticket = env.core.requests.begin(translate::Mode::Compose.surface());
+    translate::run(&env.core, &Recorder(tx), request, None, ticket).await;
+    let events = drain(&mut rx);
+    assert_eq!(deltas(&events), "你好");
+    assert!(!names(&events).contains(&"card"));
 }
 
 #[tokio::test]

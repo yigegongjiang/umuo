@@ -59,7 +59,7 @@ struct ComposePasteBackTests {
                                                   refocus: { _ in }, frontmost: {
                                                       board.pasteboard.setString("新内容", forType: .string)
                                                       return "9"
-                                                  })
+                                                  }).notice
         #expect(failure == UserText(Pasteboard.changed))
         #expect(board.pasted.isEmpty)
         #expect(board.current == "新内容")
@@ -68,7 +68,7 @@ struct ComposePasteBackTests {
     @Test func 原应用回到前台_粘贴后恢复用户剪贴板() {
         let board = Board("用户原来复制的")
         let failure = ComposeController.pasteBack("Hello", owner: "7", paster: board.paster(),
-                                                  refocus: { _ in }, frontmost: { "7" })
+                                                  refocus: { _ in }, frontmost: { "7" }).notice
         #expect(failure == nil)
         #expect(board.pasted == ["Hello"])
         #expect(board.current == "用户原来复制的")
@@ -77,7 +77,7 @@ struct ComposePasteBackTests {
     @Test func 原应用没回来_不按键_译文留在剪贴板() {
         let board = Board("用户原来复制的")
         let failure = ComposeController.pasteBack("Hello", owner: "7", paster: board.paster(),
-                                                  refocus: { _ in }, frontmost: { "9" })
+                                                  refocus: { _ in }, frontmost: { "9" }).notice
         #expect(failure != nil)
         #expect(board.pasted.isEmpty, "不往不知道是谁的窗口里 ⌘V")
         #expect(board.current == "Hello", "提示说「已复制到剪贴板，可以手动 ⌘V」，就得真在剪贴板上")
@@ -88,7 +88,7 @@ struct ComposePasteBackTests {
         var paster = board.paster()
         paster.snapshotBudget.maxBytes = 1
         let failure = ComposeController.pasteBack("Hello", owner: "7", paster: paster,
-                                                  refocus: { _ in }, frontmost: { "7" })
+                                                  refocus: { _ in }, frontmost: { "7" }).notice
         #expect(failure == UserText(Pasteboard.tooLarge))
         #expect(board.pasted.isEmpty)
         #expect(board.current == "用户原来复制的大表格", "为保住它才放弃粘贴，不能再拿译文盖掉")
@@ -97,7 +97,7 @@ struct ComposePasteBackTests {
     @Test func 没有粘贴目标_译文留在剪贴板() {
         let board = Board("用户原来复制的")
         let failure = ComposeController.pasteBack("Hello", owner: nil, paster: board.paster(),
-                                                  refocus: { _ in }, frontmost: { "7" })
+                                                  refocus: { _ in }, frontmost: { "7" }).notice
         #expect(failure != nil)
         #expect(board.pasted.isEmpty)
         #expect(board.current == "Hello")

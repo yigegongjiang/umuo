@@ -27,6 +27,21 @@ struct TriggerGateTests {
 @Suite("截图翻译的触发")
 @MainActor
 struct OcrTriggerTests {
+    @Test func 新请求使旧识别结果作废() async {
+        let app = AppModel(arguments: [], bundleIdentifier: nil)
+        let panel = PanelController(app: app)
+        let release = DispatchSemaphore(value: 0)
+        let job = panel.triggerOcr {
+            release.wait()
+            return .recognized("晚到的截图")
+        }
+        let newer = panel.triggers.begin()
+        release.signal()
+        await job?.value
+        #expect(panel.triggers.isCurrent(newer))
+        #expect(panel.session.owner == nil)
+    }
+
     @Test func 框选进行中再按一次_不再起第二个框选() async {
         let panel = PanelController(app: AppModel(arguments: [], bundleIdentifier: nil))
         let release = DispatchSemaphore(value: 0)

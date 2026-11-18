@@ -33,14 +33,14 @@ enum HostSelfTest {
         let trusted = AXIsProcessTrusted()
         if trusted {
             // CI 这类无交互会话有辅助功能权限，AX 却查不到聚焦的应用：与上面的名字一样跳过，不算失败
-            if let token = host.frontmostAppToken() {
-                check("frontmostAppToken", UUID(uuidString: token) != nil, "控件身份（AX 现查）")
+            if let token = host.writeTargetToken() {
+                check("writeTargetToken", UUID(uuidString: token) != nil, "控件身份（AX 现查）")
                 // 浮窗替换、自动收起、黑名单、语音交付仍以 pid 为准：这条也得验
                 let pid = FrontmostApp.liveToken()
                 check("FrontmostApp.liveToken", pid.flatMap { Int32($0) }.map { $0 > 0 } ?? false,
                       "pid=\(pid ?? "nil")（AX 现查）")
             } else {
-                print("- frontmostAppToken: skipped: AX reports no focused application (no interactive session)")
+                print("- writeTargetToken: skipped: AX reports no focused application (no interactive session)")
             }
             // 原文是随机串，不可能与聚焦元素的内容相同：只能被拒绝，绝不会写进去
             let refused = refusal { try host.writeBack(source: .selection, original: UUID().uuidString, text: "x") }
@@ -48,7 +48,7 @@ enum HostSelfTest {
             // 「原文变了就不写」那道检查由 pureChecks 逐条覆盖
             check("writeBack", refused != nil, "不会写进别处：\(refused ?? "竟然写进去了")")
         } else {
-            print("- frontmostAppToken: skipped: needs Accessibility permission")
+            print("- writeTargetToken: skipped: needs Accessibility permission")
             print("- writeBack: skipped: needs Accessibility permission")
             // 没有权限时的拒绝本身可以断言：与 Rust 的 PermissionDenied 同一句话
             let refused = refusal { try host.writeBack(source: .wholeField, original: "a", text: "b") }
