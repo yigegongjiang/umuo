@@ -16,6 +16,7 @@ extension PanelController {
         let wakeStarted = ContinuousClock.now
         // 取完时不再是最新的按键（之后又按了一次、按了 Esc、浮窗换成了截图翻译）：什么都不做
         let sequence = triggers.begin()
+        session.writeTarget = nil
         // 按下快捷键就顶掉浮窗上一次的请求：哪怕这次取词失败，旧译文也不该继续流进来。
         // 取词成功后也用这张凭据翻译（`startTranslation(ticketId:)`），先按的键不会因为取词慢而后来居上。
         // 在主线程上按按键顺序登记（只是加锁改一张表，不等 IO）：放进各自的后台任务，连按两次时
@@ -33,11 +34,11 @@ extension PanelController {
                 return
             }
 
-            // 静默翻译写回前要确认还是同一个输入框：读的时候顺手记下它的身份（`FocusText.guardToken`，现查 AX）。
+            // 静默翻译写回前要确认还是同一个输入框：读的时候顺手记下它的身份（`FocusText.writeTarget`，现查 AX）。
             // 静默翻译：没有选区时读整个输入框，且不做剪贴板降级（写回依赖同一条通道）；来源一路带到写回。
             let read = silent
                 ? Result { () throws(SelectionError) in try Selection.readFocusText() }
-                : Result { () throws(SelectionError) in FocusText(text: try Selection.readSelection(), source: .selection) }
+                : Result { () throws(SelectionError) in try Selection.readPanelSelection() }
             let readMs = (ContinuousClock.now - wakeStarted).milliseconds
 
             await MainActor.run {
@@ -50,12 +51,13 @@ extension PanelController {
                     let permission: PermissionKind? = error == .permissionDenied ? .accessibility : nil
                     self.report(requestId: id, message: self.session.t(error.text), permission: permission)
                 case let .success(focus):
+                    self.setWriteTarget(focus.source == .selection ? focus.writeTarget : nil, owner: focus.owner)
                     self.session.pendingStart = id
                     self.startTranslation(
                         TranslateRequest(text: focus.text, mode: silent ? .silentReplace : .selection,
                                          targetOverride: nil, sourceOverride: nil,
                                          focusSource: silent ? focus.source : nil),
-                        guardToken: focus.guardToken, ticketId: id
+                        writeTarget: focus.writeTarget, ticketId: id
                     )
                 }
             }
@@ -83,11 +85,13 @@ extension PanelController {
     func triggerOcr(run: @escaping @Sendable () -> ScreenOCR.Outcome = { ScreenOCR.run() }) -> Task<Void, Never>? {
         guard !ocrInFlight else { return nil }
         ocrInFlight = true
+        let sequence = triggers.begin()
         return Task.detached {
             let outcome = run()
             await MainActor.run {
                 // 所有结果（含取消）都要放开，否则之后再也触发不了
                 self.ocrInFlight = false
+                guard self.triggers.isCurrent(sequence) else { return }
                 switch outcome {
                 case .cancelled:
                     return

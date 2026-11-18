@@ -113,15 +113,15 @@ final class ComposeController: ComposeBackend {
             for await item in stream { self.session.apply(route: item.route, event: item.event) }
         }
         Task.detached {
-            sink.attach(engine.translate(request: request, guardToken: nil, sink: sink))
+            sink.attach(engine.translate(request: request, writeTarget: nil, sink: sink))
         }
         return nil
     }
 
     /// 写历史库，不占主线程。粘贴没成功也记：译文已经留在剪贴板上交给用户了。
-    func recordCommitted(_ requestId: UInt64) {
+    func recordCommitted(_ requestId: UInt64) async {
         guard let engine = app.engine else { return }
-        Task.detached { engine.commitCompose(requestId: requestId) }
+        await Task.detached { engine.commitCompose(requestId: requestId) }.value
     }
 
     /// 语言由 Rust 从文本推断，与浮窗同一个发音人；朗读器全应用共用一个（「停上一段再念」）。
@@ -134,21 +134,20 @@ final class ComposeController: ComposeBackend {
     /// 提交：⌘↩ 写剪贴板后收起；⌘⇧↩ 收起后切回原来的应用、确认它确实在前台再受控粘贴
     /// （粘完恢复用户原来的剪贴板）。确认不了（从 umuo 自己的窗口唤出、原应用已退出、没有辅助功能权限）
     /// 就只留在剪贴板里，并用浮窗说一声——撰写窗已经收起，它自己的提示没人看得见。
-    func commit(_ text: String, paste: Bool, owner: String?) async -> String? {
+    func commit(_ text: String, paste: Bool, owner: String?) async -> (delivered: Bool, notice: String?) {
         let t = session.t
-        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return t(ComposeRules.emptyText) }
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return (false, t(ComposeRules.emptyText)) }
         guard paste else {
             // 拿剪贴板互斥锁：⌘C 取词降级的事务可能正在另一个线程上跑，不在主线程上等
-            if let failure = await Task.detached(operation: { Pasteboard.copy(text) }).value { return t(failure) }
+            if let failure = await Task.detached(operation: { Pasteboard.copy(text) }).value { return (false, t(failure)) }
             hideCompose()
-            return nil
+            return (true, nil)
         }
         hideCompose()
-        guard let failure = await Task.detached(operation: { Self.pasteBack(text, owner: owner) }).value else {
-            return nil
-        }
-        app.panel?.showNotice(t(failure), permission: nil)
-        return t(failure)
+        let result = await Task.detached { Self.pasteBack(text, owner: owner) }.value
+        let notice = result.notice.map { t($0) }
+        if let notice { app.panel?.showNotice(notice, permission: nil) }
+        return (result.delivered, notice)
     }
 
     /// 把唤出撰写窗之前的应用叫回前台，轮询到它真的在前台再受控粘贴。固定等一段时间不够：撰写窗收起后接过焦点的
@@ -159,19 +158,22 @@ final class ComposeController: ComposeBackend {
         _ text: String, owner: String?, paster: ControlledPaste = ControlledPaste(),
         refocus: (String) -> Void = ReplaceSelection.refocus,
         frontmost: () -> String? = FrontmostApp.liveToken
-    ) -> UserText? {
-        guard let owner else { return keepOnClipboard(text, paster.pasteboard) ?? ComposeRules.pasteNotBack }
+    ) -> (delivered: Bool, notice: UserText?) {
+        func copyWithNotice(_ notice: UserText) -> (Bool, UserText?) {
+            if let failure = keepOnClipboard(text, paster.pasteboard) { return (false, failure) }
+            return (true, notice)
+        }
+        guard let owner else { return copyWithNotice(ComposeRules.pasteNotBack) }
         refocus(owner)
         // ⌘V 发往前台：按下前最后核对一次前台仍是原应用
         switch paster.run(text, proceed: { frontmost() == owner }) {
-        case .pasted: return nil
-        case .skipped: return keepOnClipboard(text, paster.pasteboard) ?? ComposeRules.pasteNotBack
+        case .pasted: return (true, nil)
+        case .skipped: return copyWithNotice(ComposeRules.pasteNotBack)
         // 不能把译文留在剪贴板上：那正好盖掉刚才为它放弃粘贴的那份大内容
-        case .clipboardTooLarge: return UserText(Pasteboard.tooLarge)
-        case .clipboardChanged: return UserText(Pasteboard.changed)
+        case .clipboardTooLarge: return (false, UserText(Pasteboard.tooLarge))
+        case .clipboardChanged: return (false, UserText(Pasteboard.changed))
         case let .failed(reason):
-            _ = keepOnClipboard(text, paster.pasteboard)
-            return reason
+            return copyWithNotice(reason)
         }
     }
 

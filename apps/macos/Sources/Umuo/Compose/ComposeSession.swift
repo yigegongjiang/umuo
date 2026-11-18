@@ -10,12 +10,12 @@ protocol ComposeBackend: AnyObject {
     /// 没能发出去（内核还没打开）时返回给用户看的话——那条路径不会有 done / error 事件。
     func translate(_ request: TranslateRequest) -> String?
     /// 提交：写剪贴板 → 收起撰写窗 →（`paste`）把唤出撰写窗之前的应用叫回前台、确认后再 ⌘V。
-    /// 成功为 nil，失败返回原因。
-    func commit(_ text: String, paste: Bool, owner: String?) async -> String?
+    /// 交付成功包含已粘贴或已留在剪贴板，自动粘贴失败时可同时返回提示。
+    func commit(_ text: String, paste: Bool, owner: String?) async -> (delivered: Bool, notice: String?)
     func hideCompose()
     /// 用户提交了第 `requestId` 次的译文：这时才记进历史（边打边翻的中间结果都不记，由 Rust 暂存、按 id 对账）。
-    func recordCommitted(_ requestId: UInt64)
-    /// 词卡上的朗读（撰写窗里打一个单词也会出词卡）。
+    func recordCommitted(_ requestId: UInt64) async
+    /// 朗读文本。
     func speak(_ text: String)
 }
 
@@ -58,8 +58,10 @@ final class ComposeSession {
 
     weak var backend: ComposeBackend?
 
-    /// 调度状态：参与的是时序决策，不需要触发渲染。
-    @ObservationIgnored private(set) var queue = ComposeQueue.empty
+    /// 调度状态也决定提交按钮何时可用。
+    private(set) var queue = ComposeQueue.empty
+    private var submitting = false
+    @ObservationIgnored private var flushAfterCommit = false
     @ObservationIgnored private var debounceTask: Task<Void, Never>?
     /// 防抖间隔。测试传 0，免得等真实的 500 ms。
     @ObservationIgnored let debounceDelay: Duration
@@ -90,6 +92,10 @@ final class ComposeSession {
 
     /// 防抖到点：当前输入交给调度器（翻译中就只排队）。
     func flushInput() {
+        if submitting {
+            flushAfterCommit = true
+            return
+        }
         let decision = queue.onInput(input)
         queue = decision.queue
         if let start = decision.start { send(start) }
@@ -133,7 +139,7 @@ final class ComposeSession {
     /// 只有完成的、而且就是当前输入的译文才能提交：流式中途提交会把半截译文粘进聊天框（审查 M18）；
     /// 改了原文或语言之后，防抖期间、关着自动翻译时，译文区里还是上一版的结果，提交出去就错了。
     var settled: Bool {
-        state.status == .done && !state.translation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !submitting && !queue.streaming && state.status == .done && !state.translation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && sentText == input.trimmingCharacters(in: .whitespacesAndNewlines) && sentOverrides == overrides
     }
 
@@ -142,12 +148,20 @@ final class ComposeSession {
     /// ⌘↩ 复制并关闭；⌘⇧↩ 复制并粘贴回唤出撰写窗之前的应用。两种都收起撰写窗（PRD §5.3）。
     func commit(paste: Bool) {
         guard settled, let backend else { return }
-        backend.recordCommitted(state.requestId)
+        submitting = true
+        let requestId = state.requestId
         let text = state.translation
         let owner = owner
         let t = t
         Task {
-            if let failure = await backend.commit(text, paste: paste, owner: owner) {
+            let result = await backend.commit(text, paste: paste, owner: owner)
+            if result.delivered { await backend.recordCommitted(requestId) }
+            submitting = false
+            if flushAfterCommit {
+                flushAfterCommit = false
+                flushInput()
+            }
+            if let failure = result.notice {
                 notice = t("compose.submitFailed", ["reason": failure])
             } else {
                 notice = paste ? t("compose.copiedPasted") : t("compose.copied")

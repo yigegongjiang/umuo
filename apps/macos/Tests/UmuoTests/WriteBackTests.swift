@@ -15,6 +15,7 @@ final class FakeTextProbe: FocusedTextProbing, @unchecked Sendable {
 
     var isTrusted = true
     var hasFocus = true
+    var range: CFRange?
     /// 按属性名回答可写性；没设的属性答「问不出来」（nil）。
     var settable: [String: Bool] = [:]
     /// 按属性名回答内容；没设的属性读不出（nil）。
@@ -24,6 +25,7 @@ final class FakeTextProbe: FocusedTextProbing, @unchecked Sendable {
     var isSecure = false
     private(set) var writes: [Write] = []
 
+    func selectedRange(_: AXUIElement) -> CFRange? { range }
     func trusted() -> Bool { isTrusted }
     func focusedElement() -> AXUIElement? { hasFocus ? AXUIElementCreateApplication(42) : nil }
     func isSettable(_: AXUIElement, _ attribute: String) -> Bool? { settable[attribute] }
@@ -49,6 +51,24 @@ private func refusal(_ body: () throws(AXWriteBack.Refused) -> Void) -> String? 
 @Suite("PanelReplaceGuards")
 struct PanelReplaceGuardTests {
     private let en = Translate(locale: .en)
+
+    @Test func 相同文字的新选区不能由任何写回路径修改() {
+        let probe = readableSelection()
+        let board = Board("用户剪贴板")
+        probe.range = CFRange(location: 0, length: 2)
+        let target = probe.targetToken(probe.focusedElement(), requiresRange: true)
+        #expect(target != nil)
+        probe.range = CFRange(location: 3, length: 2)
+        #expect(refusal { () throws(AXWriteBack.Refused) in
+            try AXWriteBack.replace(.selection, original: "原文", text: "译文", target: target, probe: probe)
+        } == "error.targetChanged")
+        #expect(refusal { () throws(AXWriteBack.Refused) in
+            try ReplaceSelection.replace("译文", original: "原文", owner: "7", target: target,
+                                         probe: probe, paster: board.paster(), frontmost: { "7" })
+        } == "error.targetChanged")
+        #expect(probe.writes.isEmpty)
+        #expect(board.pasted.isEmpty)
+    }
 
     /// 浮窗替换原文：前台恒为 "7"（源应用），选区可写、仍是原文，除非测试改掉。
     private func replace(_ probe: FakeTextProbe, _ board: Board) -> String? {

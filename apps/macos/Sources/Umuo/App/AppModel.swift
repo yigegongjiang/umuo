@@ -115,7 +115,7 @@ final class AppModel {
     private func startVoice() {
         // 上次崩溃或强退留下的临时音频：启动时清掉（默认不保存音频）
         let files = VoiceAudioFiles.standard
-        Task.detached(priority: .utility) { files.sweep() }
+        Task.detached(priority: .utility) { VoiceAudioFiles.sweepAbandoned() }
         guard let dir = defaultConfigDir() else { return print("umuo: 拿不到配置目录，语音不可用") }
         let info = voiceModelInfo(configDir: dir)
         guard let spec = VoiceModelStore.Spec(info) else { return print("umuo: 语音模型地址不合法：\(info.url)") }

@@ -46,19 +46,26 @@ private final class FakeProbe: VoiceFocusProbing, @unchecked Sendable {
     func frontmostPid() -> pid_t? { lock.withLock { frontmost } }
 }
 
-/// 第一次 capture 卡住，直到测试放行：模拟「交付已取走目标、还在等它」时用户取消并开始下一段录音。
+/// 交付已开始核验时暂停，让测试能在真正写入前取消并开始下一段。
 private final class GatedProbe: VoiceFocusProbing, @unchecked Sendable {
     let inner = FakeProbe()
     private let gate = DispatchSemaphore(value: 0)
-    private let first = OSAllocatedUnfairLock(initialState: true)
+    private let checking = DispatchSemaphore(value: 0)
 
-    func capture() -> VoiceTarget {
-        if first.withLock({ let was = $0; $0 = false; return was }) { gate.wait() }
-        return inner.capture()
-    }
+    func capture() -> VoiceTarget { inner.capture() }
 
     func release() { gate.signal() }
-    func check(_ target: VoiceTarget) -> VoiceDeliveryCheck { inner.check(target) }
+    func waitForCheck() async -> Bool {
+        await Task.detached { self.didStartCheck() }.value
+    }
+
+    private func didStartCheck() -> Bool { checking.wait(timeout: .now() + 3) == .success }
+
+    func check(_ target: VoiceTarget) -> VoiceDeliveryCheck {
+        checking.signal()
+        gate.wait()
+        return inner.check(target)
+    }
     func insert(_ text: String, into element: AXUIElement) -> Bool { inner.insert(text, into: element) }
     func frontmostPid() -> pid_t? { inner.frontmostPid() }
 }
@@ -396,7 +403,7 @@ struct FocusedFieldDeliveryTests {
         let delivery = FocusedFieldDelivery(probe: probe, paster: rig.paster())
         delivery.capture(session: 1)
         let pending = Task { await delivery.deliver(session: 1, text: "已取消的一句") }
-        for _ in 0 ..< 20 { await Task.yield() }
+        #expect(await probe.waitForCheck())
         delivery.cancel(session: 1)
         delivery.capture(session: 2)
         probe.release()

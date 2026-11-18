@@ -143,7 +143,11 @@ enum SelectionSelfTest {
             let focus = try Selection.readFocusText()
             check("readFocusText", !focus.text.isEmpty, "\(focus.source)，\(focus.text.count) 个字符")
         } catch {
-            let expected = if case .notWritable = error { true } else { error == .noSelection }
+            let expected = switch error {
+            case .notWritable, .noSelection: true
+            case let .other(text): ["error.secureInput", "error.targetChanged"].contains(text.key)
+            case .permissionDenied: false
+            }
             check("readFocusText", expected, "没有可翻译的焦点文本：\(error)")
         }
         print("- readSelection.live: skipped: would synthesize ⌘C into the frontmost app")

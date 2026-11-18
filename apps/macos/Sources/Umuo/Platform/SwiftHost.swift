@@ -33,10 +33,10 @@ final class SwiftHost: HostBridge {
     func frontmostAppName() -> String? { frontmost.currentName() }
 
     /// 写回守卫的依据：每次现查，不读缓存。
-    func frontmostAppToken() -> String? { FrontmostApp.focusToken(AX.focusedElement()) }
+    func writeTargetToken() -> String? { AXTextProbe().targetToken(AX.focusedElement()) }
 
-    func writeBack(source: FocusSource, original: String, text: String) throws {
-        do { try AXWriteBack.replace(source, original: original, text: text) } catch {
+    func writeBack(source: FocusSource, original: String, text: String, target: String? = nil) throws {
+        do { try AXWriteBack.replace(source, original: original, text: text, target: target) } catch {
             throw HostFailure.Failed(detail: t(error.text))
         }
     }

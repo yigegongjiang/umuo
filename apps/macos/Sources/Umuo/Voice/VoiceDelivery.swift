@@ -16,7 +16,7 @@ import UmuoCore
 /// - 切应用、同应用换框、只读、安全输入、目标退出或无法核验：不写，浮层保留结果并说明原因。
 @MainActor
 protocol VoiceDelivering: AnyObject {
-    /// 录音开始：记下这一会话的来源应用与焦点目标（后台现查，不阻塞主线程）。
+    /// 录音开始：在处理按键时记下来源，避免后台任务把后来切入的输入框认作目标。
     func capture(session: UInt64)
     /// 核验录音开始时的目标并写入。nil = 写进去了；否则是拒绝原因（没有写任何东西）。
     func deliver(session: UInt64, text: String) async -> VoiceDeliveryRefusal?
@@ -29,6 +29,8 @@ struct VoiceTarget: @unchecked Sendable {
     let pid: pid_t?
     let element: AXUIElement?
     let window: AXUIElement?
+    var text: String? = nil
+    var range: CFRange? = nil
 }
 
 /// 交付前现查到的状态（全部是事实，判断在 `VoiceDeliveryRules.route`）。
@@ -89,7 +91,7 @@ enum VoiceDeliveryRules {
     }
 }
 
-/// 交付要的系统能力（正式实现 `AXFocusProbe`，测试换成假的：不碰真实 AX、不按键）。都在后台线程调。
+/// 交付要的系统能力（正式实现 `AXFocusProbe`，测试使用假对象）。按键处理时捕获，其余检查与写入在后台执行。
 protocol VoiceFocusProbing: Sendable {
     /// 录音开始时的目标。
     func capture() -> VoiceTarget
@@ -109,7 +111,20 @@ struct AXFocusProbe: VoiceFocusProbing {
         let element = AX.focusedElement()
         var pid: pid_t = 0
         let elementPid = element.flatMap { AXUIElementGetPid($0, &pid) == .success && pid > 0 ? pid : nil }
-        return VoiceTarget(pid: elementPid ?? frontmostPid(), element: element, window: element.flatMap(Self.window))
+        guard let element, let elementPid, elementPid == frontmostPid(), !AX.isSecureInput(element) else {
+            return VoiceTarget(pid: nil, element: nil, window: nil)
+        }
+        // 这里跑在主线程：目标应用卡住时后续查询最多等 0.25 s，不按默认 6 s 卡住按键处理
+        // shortcut: 取焦点元素那一次仍是系统默认超时，真遇到卡顿再给系统级元素单独设
+        AXUIElementSetMessagingTimeout(element, 0.25)
+        // 元素随目标交给后台核验与写入，那时恢复系统默认超时
+        defer { AXUIElementSetMessagingTimeout(element, 0) }
+        let range = AX.selectedRange(element)
+        let text = AX.string(element, kAXValueAttribute as CFString)
+        let confirmed = AX.focusedElement().map { CFEqual($0, element) } == true
+            && Self.sameRange(range, AX.selectedRange(element))
+        return VoiceTarget(pid: elementPid, element: confirmed ? element : nil, window: Self.window(element),
+                           text: text, range: range)
     }
 
     func check(_ target: VoiceTarget) -> VoiceDeliveryCheck {
@@ -125,10 +140,14 @@ struct AXFocusProbe: VoiceFocusProbing {
         check.sameApp = frontmostPid() == pid && pid != ProcessInfo.processInfo.processIdentifier
         let current = AX.focusedElement()
         let sameWindow = Self.same(current.flatMap(Self.window), target.window)
-        check.sameElement = current.map { CFEqual($0, captured) } ?? false && sameWindow
+        check.sameElement = (current.map { CFEqual($0, captured) } ?? false) && sameWindow
         guard let current else { return check }
         check.role = AX.string(current, kAXRoleAttribute as CFString)
         check.secureInput = AX.isSecureInput(current)
+        if !check.secureInput {
+            check.sameElement = check.sameElement && Self.sameRange(target.range, AX.selectedRange(current))
+                && target.text != nil && target.text == AX.string(current, kAXValueAttribute as CFString)
+        }
         let name = kAXSelectedTextAttribute as CFString
         check.settable = AX.isSettable(current, name)
         check.selectionReadable = AX.string(current, name) != nil
@@ -140,6 +159,11 @@ struct AXFocusProbe: VoiceFocusProbing {
     }
 
     func frontmostPid() -> pid_t? { FrontmostApp.liveToken().flatMap { pid_t($0) } }
+
+    private static func sameRange(_ original: CFRange?, _ current: CFRange?) -> Bool {
+        guard let original, let current else { return false }
+        return original.location == current.location && original.length == current.length
+    }
 
     private static func window(_ element: AXUIElement) -> AXUIElement? {
         var value: CFTypeRef?
@@ -159,15 +183,15 @@ struct AXFocusProbe: VoiceFocusProbing {
     }
 }
 
-/// 正式的交付：录音开始时后台记目标，交付时后台核验并写入。
+/// 正式的交付：录音开始时记目标，交付时后台核验并写入。
 @MainActor
 final class FocusedFieldDelivery: VoiceDelivering {
     private let probe: VoiceFocusProbing
     private let paster: ControlledPaste
     /// 只留当前会话的目标：新会话开始时旧的随之丢掉。
-    private var targets: [UInt64: Task<VoiceTarget, Never>] = [:]
-    /// 被取消的会话（后台写入前最后检查）。
-    private let cancelled = OSAllocatedUnfairLock<Set<UInt64>>(initialState: [])
+    private var targets: [UInt64: VoiceTarget] = [:]
+    /// 在途交付持有自己的取消标记，结束后释放。
+    private var deliveries: [UInt64: OSAllocatedUnfairLock<Bool>] = [:]
 
     init(probe: VoiceFocusProbing = AXFocusProbe(), paster: ControlledPaste = ControlledPaste()) {
         self.probe = probe
@@ -175,26 +199,25 @@ final class FocusedFieldDelivery: VoiceDelivering {
     }
 
     func capture(session: UInt64) {
-        let probe = probe
-        targets = [session: Task.detached(priority: .userInitiated) { probe.capture() }]
-        // 取消记录不随新会话清掉：旧会话的交付可能已取走目标、还在等，它最后一道检查仍要看得到自己被取消了。
-        // 每段录音至多一条，集合很小。
+        targets = [session: probe.capture()]
     }
 
     func deliver(session: UInt64, text: String) async -> VoiceDeliveryRefusal? {
-        guard let pending = targets.removeValue(forKey: session) else { return .unverifiable }
-        let target = await pending.value
-        let probe = probe, paster = paster, cancelled = cancelled
+        guard let target = targets.removeValue(forKey: session) else { return .unverifiable }
+        let probe = probe, paster = paster
+        let cancelled = OSAllocatedUnfairLock(initialState: false)
+        deliveries[session] = cancelled
+        defer { deliveries[session] = nil }
         return await Task.detached(priority: .userInitiated) {
             Self.perform(text, target: target, probe: probe, paster: paster) {
-                cancelled.withLock { $0.contains(session) }
+                cancelled.withLock { $0 }
             }
         }.value
     }
 
     func cancel(session: UInt64) {
-        cancelled.withLock { _ = $0.insert(session) }
-        targets[session]?.cancel()
+        targets[session] = nil
+        deliveries[session]?.withLock { $0 = true }
     }
 
     /// 核验 → 选路线 → 写。同步阻塞（AX 往返、剪贴板锁、等目标读剪贴板），只在后台调。

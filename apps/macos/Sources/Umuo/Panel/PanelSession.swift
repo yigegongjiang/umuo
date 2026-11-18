@@ -21,7 +21,7 @@ protocol PanelBackend: AnyObject {
     func stopSpeaking()
     /// 替换原文。成功为 nil，失败返回原因（已是完整的一句，例如「写回原文失败：…」）。
     /// `original`：这次翻译的原文，写入前核对选区还是它。
-    func replace(_ text: String, original: String, owner: String?) async -> String?
+    func replace(_ text: String, original: String, owner: String?, target: String) async -> String?
     /// 「在撰写窗打开」。`owner` 是浮窗归属的源应用：撰写窗 ⌘⇧Enter 要优先粘回那里（`ComposeRules.ownerForCaller`）。
     func openCompose(text: String, translation: String?, owner: String?)
     func openSettings()
@@ -55,6 +55,7 @@ final class PanelSession {
     /// 这次翻译属于哪个前台应用（pid）。看门狗据此判断用户是否切走；「替换原文」写回它。
     /// 本应用自己的 pid = 没有源应用（截图 OCR）。nil = 还没取到，看门狗不收起。
     var owner: String?
+    var writeTarget: String?
     var locale: AppLocale = .source
     var t: Translate { Translate(locale: locale) }
     /// 「替换原文」正在后台写回：期间不让再点（双击会把译文插两遍）。
@@ -102,7 +103,8 @@ final class PanelSession {
     /// 只写回一次：写回进行中、这次译文已替换过（包括静默替换已经自动写回的）都不再给。
     /// OCR 结果窗没有源应用（归属是本应用自己），没有原文可替换，也不给。
     var canReplace: Bool {
-        pendingStart == nil && !state.translation.isEmpty && state.status == .done && state.mode != .ocr
+        writeTarget != nil && state.warning == nil && pendingStart == nil
+            && !state.translation.isEmpty && state.status == .done && state.mode != .ocr
             && !(state.mode == .silentReplace && state.replaced)
             && !replacing && replacedRequestId != state.requestId
     }
@@ -165,14 +167,14 @@ final class PanelSession {
     func stopSpeaking() { backend?.stopSpeaking() }
 
     func replace() {
-        guard canReplace, let backend else { return }
+        guard canReplace, let backend, let writeTarget else { return }
         let text = state.translation
         let original = state.source
         let owner = owner
         let requestId = state.requestId
         replacing = true
         Task {
-            let reason = await backend.replace(text, original: original, owner: owner)
+            let reason = await backend.replace(text, original: original, owner: owner, target: writeTarget)
             replacing = false
             // 写回期间浮窗已经换成了新的一次翻译：这条结果说的是旧译文，不能落在新译文上
             guard state.requestId == requestId else { return }

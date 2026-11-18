@@ -31,7 +31,7 @@ private final class FakeBackend: PanelBackend {
 
     func speak(_ text: String) { spoken.append(text) }
     func stopSpeaking() {}
-    func replace(_ text: String, original: String, owner: String?) async -> String? {
+    func replace(_ text: String, original: String, owner: String?, target: String) async -> String? {
         replaced.append((text, original, owner))
         return replaceResult
     }
@@ -52,7 +52,7 @@ private final class SlowReplaceBackend: PanelBackend {
     func copy(_: String) async -> String? { nil }
     func speak(_: String) {}
     func stopSpeaking() {}
-    func replace(_: String, original _: String, owner _: String?) async -> String? {
+    func replace(_: String, original _: String, owner _: String?, target _: String) async -> String? {
         await withCheckedContinuation { pending = $0 }
     }
 
@@ -87,6 +87,7 @@ private func translatedSession(mode: String = "selection", text: String = "Hello
 {
     let backend = FakeBackend()
     let session = PanelSession(backend: backend)
+    session.writeTarget = "取词目标"
     session.apply(route: route(1), event: start(1, text, mode: mode))
     session.apply(route: route(1), event: .delta(text: "你好世界"))
     session.apply(route: route(1), event: doneEvent)
@@ -145,6 +146,20 @@ struct PanelSessionTests {
         session.apply(route: route(2), event: .delta(text: "下一段的译文"))
         session.apply(route: route(2), event: doneEvent)
         #expect(session.canReplace)
+    }
+
+    @Test func 截断或没有原始目标时不能替换() {
+        let (session, _) = translatedSession()
+        session.writeTarget = nil
+        #expect(!session.canReplace)
+        session.writeTarget = "取词目标"
+        session.apply(route: route(2), event: start(2))
+        session.apply(route: route(2), event: .delta(text: "部分译文"))
+        session.apply(route: route(2), event: .done(warning: "输出截断", model: "gpt-4o-mini",
+                                                   inputTokens: 1, outputTokens: 1, estimated: false,
+                                                   firstTokenMs: nil, totalMs: 10, replaced: false))
+        #expect(session.canCopy)
+        #expect(!session.canReplace)
     }
 
     @Test func 新按键在Start之前就出错_不再等待() {
@@ -261,8 +276,10 @@ struct PanelSessionTests {
         session.apply(route: route(1), event: .delta(text: "你好世界"))
         session.apply(route: route(1), event: doneEvent)
         session.owner = "4242"
+        session.writeTarget = "第一次的目标"
         session.replace()
         await settle()
+        session.writeTarget = "第二次的目标"
         session.apply(route: route(2), event: start(2, "Another"))
         backend.finish(nil)
         await settle()
