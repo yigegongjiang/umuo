@@ -44,20 +44,18 @@ umuo 完全免费、以 MIT 许可证开源，纯 BYOK：用户自带模型 Key�
 安装包尚未经 Apple 公证：首次打开如被拦截，到**系统设置 → 隐私与安全性**点「仍要打开」。
 也可以按下方「从源码构建」自己编译。暂不提供 Homebrew 安装（见 [开发计划](docs/IMPLEMENTATION-PLAN.md)「待办」）。
 
-## 当前状态与开发入口
+## 开发文档
 
-2026-11-13：原生客户端、Sparkle 自动更新与语音输入（录音、本机转写、整理/翻译、写回输入框）已完成，
-客户端改动合入 `main` 即自动发布到 GitHub Releases（`v0.2.<序号>`，正式版，安装包 `umuo-v<版本>.dmg`）。
-正式包用固定的自签名证书签名、**未经 Apple 公证**；Developer ID 签名与公证需要付费的 Apple 开发者账号，目前暂缓。
-真机验收待做。为收敛首版，多模型对比、风格与术语管理、费用预算、收藏等旧功能已移除（旧数据保留）。
+真机验收待完成。语音输入为实验性功能。
 
-- [产品需求](docs/PRD.md)：当前功能与商业边界。
-- [首版开发计划](docs/IMPLEMENTATION-PLAN.md)：精简、语音、开源与发布的次序和完成条件。
-- [实现与验收清单](docs/PRD-CONFORMANCE.md)：已有代码、新范围调整、未实现与真机验收。
-- [发布与 Sparkle 密钥](docs/SWIFTUI-MIGRATION.md)：GitHub Releases 自动发版、失败清理、密钥与以后接公证的步骤。
-- [真机走查](docs/NATIVE-WALKTHROUGH.md)：文字、截图、语音的真机验收表与性能测量口径。
-- [贡献指南](CONTRIBUTING.md)：许可、开发前须知与 PR 要求。
-- [安全策略](SECURITY.md)：如何私下报告安全漏洞。
+- [产品需求](docs/PRD.md)
+- [客户端架构](docs/ARCHITECTURE.md)
+- [首版开发计划](docs/IMPLEMENTATION-PLAN.md)
+- [实现与验收清单](docs/PRD-CONFORMANCE.md)
+- [发布与 Sparkle 密钥](docs/SWIFTUI-MIGRATION.md)
+- [真机走查](docs/NATIVE-WALKTHROUGH.md)
+- [贡献指南](CONTRIBUTING.md)
+- [安全策略](SECURITY.md)
 
 官网 [umuo.app](https://umuo.app)（单页首页）与 Worker 在 [site/](site/)，合入 `main` 后由 Cloudflare Workers Builds 自动部署。
 
@@ -120,14 +118,6 @@ site/               官网与 Worker，独立 Bun 项目
 scripts/            图标生成、第三方许可核查与原生发布工具
 docs/              PRD、架构、发布、真机走查与验收清单
 ```
-
-## 架构原则
-
-1. UI 使用 SwiftUI，窗口与系统能力使用 AppKit 和 Apple 原生 API；交互以 Apple Human Interface Guidelines 为依据。
-2. `umuo-app` 与 `umuo-core` 保持平台无关，在 Linux 上可测试；应用编排经 UniFFI 提供给 Swift，不在 Swift 重写。
-3. 平台能力在 Swift 宿主实现：AX 取词与写回、Keychain、Vision OCR、语音、快捷键和窗口。
-4. Provider 是数据；请求流式输出，每次请求独立取消，旧事件不覆盖新结果。
-5. Key 只存系统 Keychain，不进配置、日志或历史，供应商请求由 Rust 发出。
 
 ## 隐私
 

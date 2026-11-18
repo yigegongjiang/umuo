@@ -1,7 +1,6 @@
 # 发布与 Sparkle 密钥
 
-> 文件名沿用旧的 `SWIFTUI-MIGRATION.md`：源码与官网文档里还有按这个名字（与「必须守住的兼容性」小节）引用它的地方。
-> SwiftUI 迁移本身已完成；迁移阶段的记录在 git 历史里。开发命令见 [README](../README.md)，真机走查见 [NATIVE-WALKTHROUGH.md](NATIVE-WALKTHROUGH.md)。
+> 开发命令见 [README](../README.md)，真机走查见 [NATIVE-WALKTHROUGH.md](NATIVE-WALKTHROUGH.md)。
 
 客户端只发 Apple Silicon（arm64）、macOS 14+ 的包。正式包使用固定的 `umuo Self-Signed` 自签名证书签名、**未经 Apple 公证**；Developer ID 公证（暂缓：需付费开发者账号）、
 真实 N → N+1 更新实测与 Homebrew Cask 是待办（见 [开发计划](IMPLEMENTATION-PLAN.md) 阶段 G）。
@@ -23,7 +22,7 @@
   先排队的那次会被顶掉，只有最新一次出包（它已包含中间的改动）。
 - **权限**：工作流默认 `contents: read`，只有构建发布的 job 有 `contents: write`。
 
-附件名固定，不带版本号：
+发布附件和下载入口如下。
 
 | 附件 | 用途 |
 | --- | --- |
@@ -59,7 +58,7 @@ git push origin --delete v0.2.N              # 只剩 tag、没有 Release 时
 - 组装后自检：codesign、Info.plist 关键值、主程序为 arm64、框架含 arm64 切片、资源包与许可文件位置，再从 `.app` 里跑 `--selftest`。
 - `--quick` 复用 `verify.sh` 刚编好的 debug 产物，只做 ad-hoc、不公证、不打 `.dmg`，是 `bun run verify` 里的打包冒烟。
 
-产物在 `apps/macos/dist`：`umuo.app`、`umuo-vX.Y.Z.dmg`、`umuo.app.tar.gz`；再跑 `bun scripts/sparkle-appcast.ts "$PWD/apps/macos/dist.noindex" X.Y.Z`
+产物在 `apps/macos/dist.noindex`：`umuo.app`、`umuo-vX.Y.Z.dmg`、`umuo.app.tar.gz`；再跑 `bun scripts/sparkle-appcast.ts "$PWD/apps/macos/dist.noindex" X.Y.Z`
 生成 `appcast.xml`。正常发布走 release.yml；本机产物只用于自测。
 
 ## Sparkle 原生应用内更新

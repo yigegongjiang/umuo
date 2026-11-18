@@ -12,7 +12,6 @@ v0.8 只同步现状：仓库已公开、官网只做首页与下载跳转、客
 - 产品需求以本文为准，进度与实现证据见 [PRD-CONFORMANCE.md](PRD-CONFORMANCE.md)。
 - 开发次序与完成条件见 [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)。
 - 现有代码的分层见 [ARCHITECTURE.md](ARCHITECTURE.md)，发布流程与 Sparkle 密钥见 [SWIFTUI-MIGRATION.md](SWIFTUI-MIGRATION.md)。
-- 历史需求见 [v0.4 快照](archive/PRD-v0.4.md)，历史功能实现见 [v0.4 验收记录](archive/PRD-CONFORMANCE-v0.4.md)。
 
 仅做 macOS 14+，Swift 6、SwiftUI、AppKit 与 Rust / UniFFI；只支持 Apple Silicon（M 系列芯片，安装包只含 arm64）。源码以 MIT 开源。
 “已实现”与“已发布”分别记录，文档改版不代表功能已删除或已交付。
@@ -51,7 +50,7 @@ v0.8 只同步现状：仓库已公开、官网只做首页与下载跳转、客
 
 三项核心按 §5 的场景验证；性能以原生 release 包测量，内存用 phys_footprint。
 语音分开记录录音结束至转写完成、后处理完成、文字交付的冷/热延迟，不预先承诺未经测量的两秒指标。
-测量方法见 [NATIVE-WALKTHROUGH.md](NATIVE-WALKTHROUGH.md)「性能测量」；旧 Tauri 数据仅为[历史记录](archive/RELEASE-GATES-tauri.md)。
+测量方法见 [NATIVE-WALKTHROUGH.md](NATIVE-WALKTHROUGH.md)「性能测量」。
 
 ### 3.3 非目标
 

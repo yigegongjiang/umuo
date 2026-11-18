@@ -44,22 +44,20 @@ umuo 完全免費、以 MIT 授權條款開源，純 BYOK：使用者自備模�
 安裝檔尚未經 Apple 公證：首次打開若被攔下，請到**系統設定 → 隱私權與安全性**點「仍要打開」。
 也可以依照下方「從原始碼建置」自行編譯。目前暫不提供 Homebrew 安裝（見 [開發計畫](docs/IMPLEMENTATION-PLAN.md)「待辦」）。
 
-## 目前狀態與開發入口
+## 開發文件
 
-2026-11-13：原生用戶端、Sparkle 自動更新與語音輸入（錄音、本機轉寫、整理／翻譯、寫回輸入框）皆已完成，
-用戶端的變更合併進 `main` 後即自動發布到 GitHub Releases（`v0.2.<序號>`，正式版，安裝檔為 `umuo-v<版本>.dmg`）。
-正式版以固定的自簽憑證簽署、**未經 Apple 公證**；Developer ID 簽署與公證需要付費的 Apple 開發者帳號，目前暫緩。
-實機驗收尚待進行。為了收斂首版範圍，多模型比較、風格與術語管理、費用預算、收藏等舊功能已移除（舊資料仍保留）。
+實機驗收尚待完成，語音功能以實驗性功能提供。
 
 以下開發文件皆為簡體中文：
 
-- [產品需求](docs/PRD.md)：目前的功能與商業邊界。
-- [首版開發計畫](docs/IMPLEMENTATION-PLAN.md)：精簡、語音、開源與發布的順序及完成條件。
-- [實作與驗收清單](docs/PRD-CONFORMANCE.md)：既有程式碼、新的範圍調整、尚未實作項目與實機驗收。
-- [發布與 Sparkle 金鑰](docs/SWIFTUI-MIGRATION.md)：GitHub Releases 自動發版、失敗後的清理、金鑰，以及日後接上公證的步驟。
-- [實機走查](docs/NATIVE-WALKTHROUGH.md)：文字、截圖、語音的實機驗收表與效能量測口徑。
-- [貢獻指南](CONTRIBUTING.md)：授權、開發前須知與 PR 要求。
-- [安全性政策](SECURITY.md)：如何私下回報安全性漏洞。
+- [產品需求](docs/PRD.md)
+- [用戶端架構](docs/ARCHITECTURE.md)
+- [首版開發計畫](docs/IMPLEMENTATION-PLAN.md)
+- [實作與驗收清單](docs/PRD-CONFORMANCE.md)
+- [發布與 Sparkle 金鑰](docs/SWIFTUI-MIGRATION.md)
+- [實機走查](docs/NATIVE-WALKTHROUGH.md)
+- [貢獻指南](CONTRIBUTING.md)
+- [安全性政策](SECURITY.md)
 
 官網 [umuo.app](https://umuo.app)（單頁首頁）與 Worker 位於 [site/](site/)，合併進 `main` 後由 Cloudflare Workers Builds 自動部署。
 
@@ -69,11 +67,11 @@ umuo 完全免費、以 MIT 授權條款開源，純 BYOK：使用者自備模�
 [rustup](https://rustup.rs)（Rust 版本由 `rust-toolchain.toml` 固定，首次建置時會自動安裝）、[Bun](https://bun.sh) 1.4+（以 `package.json` 的 `packageManager` 為準）。
 
 ```bash
-bun install          # 仓库工具脚本依赖
-cargo fetch          # Rust 依赖
+bun install          # 儲存庫工具指令碼的相依套件
+cargo fetch          # Rust 相依套件
 
-bun run dev:macos    # 编 Rust 绑定与 SwiftUI 客户端后启动（macOS 14+，Swift 6）
-# 开发二进制默认不注册全局快捷键；先退出其他实例，再用 bun run dev:macos --hotkeys
+bun run dev:macos    # 編譯 Rust 綁定與 SwiftUI 用戶端後啟動（macOS 14+，Swift 6）
+# 開發版本預設停用全域快速鍵。請先結束其他執行個體，再執行 bun run dev:macos --hotkeys
 ```
 
 ## 開發指令
@@ -122,14 +120,6 @@ site/               官网与 Worker，独立 Bun 项目
 scripts/            图标生成、第三方许可核查与原生发布工具
 docs/              PRD、架构、发布、真机走查与验收清单
 ```
-
-## 架構原則
-
-1. UI 使用 SwiftUI，視窗與系統功能使用 AppKit 與 Apple 原生 API；互動以 Apple Human Interface Guidelines 為依據。
-2. `umuo-app` 與 `umuo-core` 保持與平台無關，可在 Linux 上測試；應用程式的編排邏輯經由 UniFFI 提供給 Swift，不在 Swift 中重寫。
-3. 平台功能在 Swift 宿主端實作：AX 取詞與寫回、鑰匙圈、Vision OCR、語音、快速鍵與視窗。
-4. Provider 是資料；請求以串流輸出，每個請求可各自取消，舊事件不會覆蓋新結果。
-5. 金鑰只存放在系統鑰匙圈，不寫入設定、日誌或歷史，對供應商的請求由 Rust 發出。
 
 ## 隱私
 

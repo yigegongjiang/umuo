@@ -2,7 +2,6 @@
 
 2026-11-02 · 对应 [PRD v0.8](PRD.md)；开发次序与精简批次见 [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)。
 本表区分已有代码、新范围调整、未实现与真机验收。范围确认不会自动把未实现项标成完成。
-精简前的完整实现证据保存在 [v0.4 快照](archive/PRD-CONFORMANCE-v0.4.md)，其中退出范围的条目不再作为首版要求。
 
 状态：✅ 已有实现及自动验证；🟡 已有基础，仍需新范围调整或验收；⬜ 未实现/待完成。
 ✅ 不代表已发布，也不代替权限、焦点、多显示器和真实升级验证。
@@ -31,7 +30,7 @@
 
 | 编号 | PRD | 要求 | 状态 | 完成证据要求 |
 | --- | --- | --- | --- | --- |
-| V1 | §5.11、§8 | 本地转写候选、模型与许可验证 | 🟡 | `scripts/asr-fixtures.ts`、`scripts/asr-runner.swift`、`scripts/asr-eval.ts` 及 `asr-eval.test.ts` 已完成 `transcribe.cpp` v0.4.1 与 4 份 GGUF 权重在 Apple M2 Pro 上的实测（实测记录见 `archive/VERIFICATION-LOG-2026-10.md`）：选定 `Qwen3-ASR-0.6B-Q4_K_M.gguf`（562.3 MiB，Apache-2.0），16 条合成语音平均误差 0.67%、热推理 142.4 ms（30.6× RT）、峰值 `phys_footprint` 333.1 MB、卸载回落至 108.7 MB；平台范围已确认只针对 Apple Silicon（M 系列）+ macOS 14+；真人麦克风录音样本待阶段 C 补充 |
+| V1 | §5.11、§8 | 本地转写候选、模型与许可验证 | 🟡 | `scripts/asr-fixtures.ts`、`scripts/asr-runner.swift`、`scripts/asr-eval.ts` 及 `asr-eval.test.ts` 已完成 `transcribe.cpp` v0.4.1 与 4 份 GGUF 权重在 Apple M2 Pro 上的实测（实测条件与数据见 [开发计划阶段 B](IMPLEMENTATION-PLAN.md#阶段-b-验证本地转写引擎)）：选定 `Qwen3-ASR-0.6B-Q4_K_M.gguf`（562.3 MiB，Apache-2.0），16 条合成语音平均误差 0.67%、热推理 142.4 ms（30.6× RT）、峰值 `phys_footprint` 333.1 MB、卸载回落至 108.7 MB；平台范围已确认只针对 Apple Silicon（M 系列）+ macOS 14+；真人麦克风录音样本待阶段 C 补充 |
 | V2 | §5.11、§7.4 | 模型下载、校验、取消/重试、加载/卸载 | 🟡 | `Voice/VoiceModelStore.swift`、`LocalTranscriber.swift`、`voice_session/model.rs`：首次使用才在浮层下载，`.partial` + Range 续传、超长或 SHA-256 不符即删、校验后原子改名；宿主进程内 mmap 加载、串行队列、abort 取消、空闲 300 s 卸载；`Package.swift` 以 binaryTarget 引入 transcribe.cpp v0.4.1 并校验 checksum，`bundle.sh` 拷入并签名框架、附四份许可。2026-11-11 校验任务传递取消，每个哈希块及安装前检查取消，保留完整断点且不触发预热；`VoiceModelStoreTests` 用可控校验覆盖取消与重试。真实 562 MB 下载、HF 重定向后 Range、首推 Metal 初始化时延（约 45 s；转写中由 `VoiceOverlayModel.preparingEngine` 显示「正在准备语音引擎」）待真机 |
 | V3 | §5.11、§7.2 | 麦克风、按住录音/松开结束/Esc 取消 | 🟡 | `Voice/SystemVoiceRecorder.swift`（AVAudioEngine 跟随系统默认输入，16 kHz 单声道）、`GlobalHotkeys` 松开事件；两个语音键：`voiceHotkey` 整理（默认 ⌥⌘V）、`voiceTranslateHotkey` 翻译（默认 ⌃⌘V），进设置翻译页「语音输入」分组并参与冲突检查；`Platform/EscapeRouter.swift` 统一全局 Esc，按最近认领的浮层路由、无人认领即注销；`NSMicrophoneUsageDescription` 四语言与 `audio-input` entitlement。授权弹框、拒绝权限、换设备、⌃⌘V 占用情况待真机 |
 | V4 | §5.11、§7.5 | 会话状态与旧结果隔离 | 🟡 | `crates/umuo-app/src/voice_session/`：纯状态机，会话号单调递增，非当前会话结果不改状态，Esc 分阶段丢弃录音/中止转写/取消后处理；`umuo-ffi/src/voice_session.rs` 导出，`VoiceController` 执行副作用；Rust 与 Swift 假音频测试覆盖迁移、重复触发、取消、迟到结果；#10 的 `VoicePostProcessor` 保留运行中旧会话的取消记录，`VoiceTests` 用延迟句柄覆盖新会话开始前后取消旧任务，迟到句柄仍收到取消；真机连按与各阶段 Esc 待验 |
@@ -54,7 +53,6 @@
 ## 开源与官网
 
 2026-11-02 起完全免费、MIT 开源：取消买断与订阅，删除 10-30 实现的客户端许可证/试用门控、Worker Waffo 收费与官网购买/激活。
-原 C1–C4（买断授权）作废，当时的实现证据见[验证记录归档](archive/VERIFICATION-LOG-2026-10.md)与提交历史。
 
 | 编号 | PRD | 要求 | 状态 | 实现证据与剩余验收 |
 | --- | --- | --- | --- | --- |
@@ -114,7 +112,6 @@ Rust fmt / clippy / 全量测试、443 项 Swift Testing（新增 17 项，含�
 包内自检 74 项通过、7 项因权限或交互条件跳过。快照期间再次复制、核验期间复制与 nil 数据超时均使用假剪贴板验证，真实应用走查仍待完成。
 
 阶段 A 五批精简的内容、兼容处理与入口清单只记在 [开发计划](IMPLEMENTATION-PLAN.md)「入口与依赖清单及批次进度」，这里不重复。
-各批次与各次合入的门禁数字（2026-10-23 至 11-02）归档在 [archive/VERIFICATION-LOG-2026-10.md](archive/VERIFICATION-LOG-2026-10.md)。
 
 最新基线（2026-11-02，`fix/review-ci-docs`，独立 TMPDIR）：根 `bun run verify` 全通过——Biome 11 个文件、工具测试 10 项；
 Rust（rust-toolchain 1.98.1）fmt / clippy 通过，umuo-app 163、umuo-core 168、umuo-ffi 23、umuo-store 45、pipeline 15、event_wire 1；
