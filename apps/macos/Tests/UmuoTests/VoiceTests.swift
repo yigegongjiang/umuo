@@ -1119,4 +1119,11 @@ struct SystemVoiceRecorderTests {
         gate.answer(false)
         await #expect(throws: VoiceFault.self, "当前会话照常报缺权限") { try await second.value }
     }
+
+    @Test func 麦克风设置_没读到或没选时跟随系统() {
+        #expect(AppModel.voiceInputDevice(settingsJson: nil) == "")
+        #expect(AppModel.voiceInputDevice(settingsJson: #"{"theme":"dark"}"#) == "")
+        #expect(AppModel.voiceInputDevice(settingsJson: #"{"voiceInputDevice":"BuiltInMicrophoneDevice"}"#)
+            == "BuiltInMicrophoneDevice")
+    }
 }
