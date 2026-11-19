@@ -230,25 +230,13 @@ describe('手机端：文字、下载与演示排成一列', () => {
     expect(host.querySelectorAll('#download .download-panel .btn-solid')).toHaveLength(1)
   })
 
-  it('触屏原生语言选择器就地切换并保存语言', () => {
-    const select = host.querySelector<HTMLSelectElement>('footer select')
-    if (!select) throw new Error('找不到语言选择器')
-    expect([...select.options].map(({ value }) => value)).toEqual([
-      'en',
-      'zh-cn',
-      'zh-tw',
-      'ja',
-      'ko',
-    ])
-    expect(select.value).toBe('zh-cn')
-    act(() => {
-      select.value = 'ja'
-      select.dispatchEvent(new Event('change', { bubbles: true }))
-    })
-    expect(window.location.pathname).toBe('/')
+  it('触屏语言菜单按两列排列并使用站点语言链接', () => {
+    expect(css).toMatch(/\.site-footer \.lang-menu\s*\{[^}]*grid-template-columns: repeat\(2,/)
+    expect(host.querySelector('footer select')).toBeNull()
+    click('footer button[aria-expanded]')
+    click('footer a[href="/ja/"]')
     expect(document.cookie).toContain('umuo-lang=ja')
     expect(document.documentElement.dataset.locale).toBe('ja')
-    expect(select.value).toBe('ja')
     expect(host.querySelector('footer ul')).toBeNull()
   })
 })
