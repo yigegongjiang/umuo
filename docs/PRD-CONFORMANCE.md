@@ -15,6 +15,7 @@
 | T3 | §5.3 | 简单输入翻译窗 | 🟡 | `Compose/`：第四批已移除回译与临时换模型，保留源/目标语言、自动翻译、复制与复制粘贴；#107 共用系统面板外壳与按系统版本切换的材质；#116 记下发出翻译时的原文与语言，只有与当前输入一致时才可提交，旧译文不会被提交；关掉自动翻译时页头给出「翻译」按钮，⌘T 同效；2026-11-12 合并语言顶栏、增加原文/译文分区与空态，自动翻译和手动翻译移至底部，复制/粘贴按钮精简快捷键文字为悬停提示；`PanelLayoutSelfTest` 改为真实 `ComposeView` 覆盖初始/最小尺寸；审查修复将提交提示移入滚动内容区，并通过真实控件布局锚点验证四语言长提示下的关闭、翻译与提交按钮不越界；2026-11-13 输入与译文合并为内嵌阅读区，底栏使用 `ViewThatFits` 在窄窗口分行，保留四语言最小尺寸操作边界自检；直接输入、粘贴回原应用仍待真机验收 |
 | T4 | §5.4 | 选区或整框原地翻译，失败不改原文 | 🟡 | `Platform/AXWriteBack.swift`、`umuo-app/src/translate/`；取词时保留 AX 控件身份凭据，写回前通过 Host 复核，避免同应用相同文本的其他输入框被覆盖；`FocusIdentityTests` 覆盖身份区分及粘贴前校验失败恢复剪贴板；浮窗粘贴获得锁后重新核验控件与安全输入；真实应用与同应用焦点变化待验 |
 | T5 | §5.2 | 单词语境释义与朗读 | 🟡 | `umuo-core/src/word_card.rs`、`Panel/WordCardView.swift`：第四批只保留词、发音、语境释义与朗读；真机待验收 |
+| T6 | §5.2 | PopClip 扩展经 `umuo://translate` 弹浮窗翻译 | 🟡 | `App/ExternalURL.swift`、`PanelTriggers.swift` 的 `translateExternal`、`packaging/Info.plist` 的 `CFBundleURLTypes`、`scripts/popclip/umuo.popclipext`；2026-11-19 在 `willFinishLaunching` 注册 `kAEGetURL`，冷启动时文本暂存到 Engine 打开后再翻，打开失败由浮窗说明内核状态；只认 `translate`，文本由调用方给出，不取词、不写回，因此不经取词黑名单（PopClip 自带按应用排除）；任何应用或网页都能打开该链接，每次翻译消耗用户自己的 Key；扩展以 `activate: false` 打开，不激活 umuo；`ExternalURLTests` 覆盖解析与冷启动暂存，`bundle.sh` 自检 URL scheme；真机待验 PopClip 冷/热启动与源应用焦点 |
 
 ## OCR 截图翻译
 

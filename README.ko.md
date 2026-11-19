@@ -104,6 +104,11 @@ bun run dev:macos    # Rust 바인딩과 SwiftUI 클라이언트를 빌드한 �
 처음 사용할 때 마이크 권한을 요청하고 Hugging Face에서 약 560MB의 음성 인식 모델을 내려받습니다. 입력란에 다시 써넣는 데에도 손쉬운 사용 권한이 필요합니다.
 두 단축키 모두 **Settings → Translation → Voice Input**(설정 → 번역 → 음성 입력)에서 바꿀 수 있습니다.
 
+### PopClip
+
+[PopClip](https://www.popclip.app/)(2024.12 이상)을 쓰고 있다면 `open scripts/popclip/umuo.popclipext`로 확장을 설치합니다.
+이후 텍스트를 선택하고 PopClip 막대의 umuo 아이콘을 누르면 마우스 근처의 플로팅 창에 번역이 표시됩니다. 확장은 `umuo://translate?text=…`로 umuo를 호출합니다.
+
 ## 저장소 구조
 
 ```
@@ -119,7 +124,7 @@ crates/umuo-app/     공유 앱 로직: 설정, 번역 파이프라인, 음성 �
 crates/umuo-core/    플랫폼 독립 번역 코어: Provider, Prompt, 스트리밍 파싱, 계량
 crates/umuo-store/   로컬 SQLite: 기록(이전 즐겨찾기·사용량 테이블은 데이터만 보존)
 site/               공식 웹사이트와 Worker, 독립 Bun 프로젝트
-scripts/            아이콘 생성, 서드파티 라이선스 검사, 네이티브 배포 도구
+scripts/            아이콘 생성, 서드파티 라이선스 검사, 네이티브 배포 도구, PopClip 확장
 docs/              PRD, 아키텍처, 배포, 실기기 점검, 검수 체크리스트
 ```
 

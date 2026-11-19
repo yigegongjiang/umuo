@@ -47,6 +47,10 @@ final class AppModel {
     @ObservationIgnored private(set) var statusBar: StatusBarController?
     /// 语音输入（按住录音、松开转写，再整理或翻译，交付到录音开始时的输入框）。`start()` 里才建，理由同 `panel`。
     @ObservationIgnored private(set) var voice: VoiceController?
+    /// `umuo://` 链接（PopClip 扩展）。
+    @ObservationIgnored private lazy var externalURLs = ExternalURLReceiver { [unowned self] in self.handle($0) }
+    /// 冷启动时链接先于 Engine 打开到达：存下文本，`opened` 之后再翻。
+    @ObservationIgnored private(set) var pendingExternalText: String?
 
     /// 内核的状态。给用户看的句子按当前界面语言现取（`engineStatus`）。
     private enum EngineState {
@@ -80,6 +84,7 @@ final class AppModel {
     /// 启动：菜单栏应用（不进 Dock、不抢焦点，对应 Info.plist 的 LSUIElement）、开始跟踪前台应用、后台打开 Engine。
     func start() {
         NSApplication.shared.setActivationPolicy(.accessory)
+        externalURLs.start()
         frontmost.start()
         updater.start()
         keyboardLayout.start()
@@ -171,6 +176,11 @@ final class AppModel {
             engineState = .noHome
             registerHotkeysWithoutEngine()
         }
+        // Engine 打开失败时也照常交给浮窗：由它说明内核状态，不吞掉用户的点击
+        if let text = pendingExternalText {
+            pendingExternalText = nil
+            panel?.translateExternal(text)
+        }
     }
 
     /// 内核没打开：读不到设置，快捷键按内核的默认键位注册（自定义的键位此时无从得知——
@@ -207,6 +217,17 @@ final class AppModel {
         case .silentReplace: panel?.triggerSilentReplace()
         case .ocr: panel?.triggerOcr()
         case .compose: compose?.toggle()
+        }
+    }
+
+    func handle(_ command: ExternalCommand) {
+        switch command {
+        case let .translate(text):
+            if case .starting = engineState {
+                pendingExternalText = text
+            } else {
+                panel?.translateExternal(text)
+            }
         }
     }
 

@@ -100,6 +100,11 @@ bun run dev:macos    # 编 Rust 绑定与 SwiftUI 客户端后启动（macOS 14+
 首次使用会请求麦克风权限，并从 Hugging Face 下载约 560 MB 的转写模型；写回输入框同样需要辅助功能权限。
 两个键都可以在**设置 → 翻译 → 语音输入**里修改。
 
+### PopClip
+
+装有 [PopClip](https://www.popclip.app/)（2024.12 及以上）时，执行 `open scripts/popclip/umuo.popclipext` 安装扩展。
+之后选中文字、点 PopClip 栏里的 umuo 图标，译文同样出现在鼠标附近的浮窗里。扩展经 `umuo://translate?text=…` 唤起 umuo。
+
 ## 仓库结构
 
 ```
@@ -115,7 +120,7 @@ crates/umuo-app/     共享应用逻辑：设置、翻译流水线、语音会�
 crates/umuo-core/    平台无关翻译内核：Provider、Prompt、流式解析、计量
 crates/umuo-store/   本地 SQLite：历史（旧收藏与用量表只保留数据）
 site/               官网与 Worker，独立 Bun 项目
-scripts/            图标生成、第三方许可核查与原生发布工具
+scripts/            图标生成、第三方许可核查、原生发布工具与 PopClip 扩展
 docs/              PRD、架构、发布、真机走查与验收清单
 ```
 

@@ -265,6 +265,7 @@ check CFBundleExecutable "$(plist_get CFBundleExecutable)" "$exe_name"
 check CFBundleShortVersionString "$(plist_get CFBundleShortVersionString)" "$VERSION"
 check CFBundleVersion "$(plist_get CFBundleVersion)" "$VERSION"
 check LSUIElement "$(plist_get LSUIElement)" true
+check CFBundleURLSchemes "$(plist_get CFBundleURLTypes.0.CFBundleURLSchemes.0)" umuo
 [ -x "$app/Contents/MacOS/$exe_name" ] || fail "可执行文件不在 Contents/MacOS/$exe_name"
 stray_rpaths=$(otool -l "$app/Contents/MacOS/$exe_name" | sed -n 's/^ *path \(.*\) (offset .*$/\1/p' |
   grep -v -e '^@' -e '^/usr/lib/swift$' || true)

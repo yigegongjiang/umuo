@@ -1,0 +1,10 @@
+# PopClip 扩展：选中文字 → umuo://translate?text=<文本>，umuo 在鼠标旁弹浮窗翻译
+# （apps/macos/Sources/Umuo/App/ExternalURL.swift）。activate: false 让 umuo 不抢源应用的焦点。
+# 安装 / 更新：open scripts/popclip/umuo.popclipext
+name: umuo
+identifier: app.umuo.popclip
+description: 用 umuo 翻译选中的文字。
+icon: icon.png
+popclipVersion: 4688
+javascript: |
+  popclip.openUrl("umuo://translate?text=" + encodeURIComponent(popclip.input.text), { activate: false })
