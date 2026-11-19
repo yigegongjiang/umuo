@@ -75,10 +75,18 @@ final class SystemVoiceRecorder: VoiceRecording {
         let writer = Writer(output: output)
         let device = inputDevice()
         do {
-            try Self.attach(engine, writer, device: device)
+            // 切设备、prepare、start 可能阻塞几百毫秒（蓝牙耳机切路由），放到后台，按下说话的那一刻界面不卡
+            try await Self.attachOffMain(engine, writer, device: device)
         } catch {
             writer.finish()
             throw error
+        }
+        // 启动期间这一会话被丢弃、或新会话已经开始：收拾自己这台引擎，不碰新会话的
+        guard latest == session else {
+            engine.inputNode.removeTap(onBus: 0)
+            engine.stop()
+            writer.finish()
+            return
         }
         let observer = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
@@ -100,7 +108,24 @@ final class SystemVoiceRecorder: VoiceRecording {
     }
 
     /// 按输入节点当前的格式装 tap、换转换器、启动引擎。首次开麦与配置变更后重接共用。
-    private static func attach(_ engine: AVAudioEngine, _ writer: Writer, device: String) throws {
+    private struct EngineBox: @unchecked Sendable { let engine: AVAudioEngine }
+
+    /// `attach` 放到后台队列执行。引擎此时还没交给任何人，只有这一个线程碰它。
+    nonisolated private static func attachOffMain(_ engine: AVAudioEngine, _ writer: Writer, device: String) async throws {
+        let box = EngineBox(engine: engine)
+        try await withCheckedThrowingContinuation { (done: CheckedContinuation<Void, Error>) in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    try attach(box.engine, writer, device: device)
+                    done.resume()
+                } catch {
+                    done.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    nonisolated private static func attach(_ engine: AVAudioEngine, _ writer: Writer, device: String) throws {
         Microphones.select(device, on: engine)
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)

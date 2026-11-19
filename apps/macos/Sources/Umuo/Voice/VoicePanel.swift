@@ -122,6 +122,10 @@ struct VoiceOverlayView: View {
         .frame(width: VoicePanelController.width, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .contain)
+        // 浮层不抢焦点：录音、处理、完成、失败各播报一次，读屏用户才知道进行到哪一步
+        .onChange(of: title) { _, title in
+            if !title.isEmpty { AccessibilityNotification.Announcement(title).post() }
+        }
     }
 
     private var header: some View {

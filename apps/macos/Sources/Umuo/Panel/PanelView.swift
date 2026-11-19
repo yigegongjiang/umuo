@@ -26,6 +26,11 @@ struct PanelView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(t("panel.resultAria"))
+        // 浮窗不抢焦点，读屏焦点留在源应用里：译文出来或出错时主动播报一次，否则读屏用户收不到结果
+        .onChange(of: state.status) { _, status in
+            let text = status == .done ? state.translation : status == .error ? session.errorText : nil
+            if let text, !text.isEmpty { AccessibilityNotification.Announcement(text).post() }
+        }
     }
 
     /// 结果之外的几句话：可能不完整、操作结果、原文是否已被替换。翻译本身是成功的，所以是提示而不是错误块。
@@ -198,6 +203,7 @@ struct PanelView: View {
                 if session.canReplace {
                     PanelButton(t("panel.replace"), systemImage: "arrow.left.arrow.right") { session.replace() }
                         .help(t("panel.replaceHint"))
+                        .keyboardShortcut(.return, modifiers: .command)
                 }
                 PanelButton(t("panel.compose"), systemImage: "square.and.pencil") { session.openCompose() }
             }
@@ -211,6 +217,9 @@ struct PanelView: View {
             if session.canCopy {
                 PanelButton(t("panel.copy"), systemImage: "doc.on.doc", iconOnly: false, prominent: true) { session.copy() }
                     .floatingControl("panel.copy")
+                    // 浮窗成为 key（点进可改原文、或读屏聚焦）时才生效，不注册全局键、不抢源应用的 ⌘C；
+                    // 原文可编辑时把 ⌘C 留给文本框复制选区
+                    .keyboardShortcut(session.editableSource ? nil : KeyboardShortcut("c", modifiers: .command))
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)

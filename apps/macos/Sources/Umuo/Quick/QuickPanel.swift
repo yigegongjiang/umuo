@@ -87,4 +87,9 @@ final class QuickPanelController: NSObject, QuickBackend, NSPopoverDelegate {
         hide()
         app.openHistory()
     }
+
+    func quit() {
+        hide()
+        app.quit()
+    }
 }
