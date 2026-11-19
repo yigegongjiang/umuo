@@ -23,22 +23,16 @@ extension PanelController {
         // 登记顺序可能颠倒，后按的那次拿到小 id、被判成已顶掉，浮窗就停在加载上。
         let id = engine.beginRequest(surface: Self.surface)
         Task.detached {
-
-            // PRD §7.3 的取词黑名单：密码管理器等应用**在读取之前**就拦下，并用浮窗说清楚。
-            if let notice = Self.blockNotice(engine) {
-                await MainActor.run {
-                    guard self.triggers.isCurrent(sequence) else { return }
-                    self.showNearCursor()
-                    self.report(requestId: id, message: notice, permission: nil, actions: [.openModelSettings])
+            let blockNotice = { (owner: String) throws(SelectionError) -> String? in
+                guard let pid = pid_t(owner), let app = NSRunningApplication(processIdentifier: pid),
+                      let name = app.localizedName ?? app.bundleIdentifier else {
+                    throw .other(UserText("error.targetChanged"))
                 }
-                return
+                return engine.selectionBlockNotice(appName: name)
             }
-
-            // 静默翻译写回前要确认还是同一个输入框：读的时候顺手记下它的身份（`FocusText.writeTarget`，现查 AX）。
-            // 静默翻译：没有选区时读整个输入框，且不做剪贴板降级（写回依赖同一条通道）；来源一路带到写回。
             let read = silent
-                ? Result { () throws(SelectionError) in try Selection.readFocusText() }
-                : Result { () throws(SelectionError) in try Selection.readPanelSelection() }
+                ? Result { () throws(SelectionError) in try Selection.readFocusText(blockNotice: blockNotice) }
+                : Result { () throws(SelectionError) in try Selection.readPanelSelection(blockNotice: blockNotice) }
             let readMs = (ContinuousClock.now - wakeStarted).milliseconds
 
             await MainActor.run {
@@ -47,6 +41,8 @@ extension PanelController {
                 self.showNearCursor()
                 print("umuo: 取词耗时 \(readMs)ms\(read.isSuccess ? "" : "（失败）")；唤起耗时 \((ContinuousClock.now - wakeStarted).milliseconds)ms")
                 switch read {
+                case let .failure(.blocked(message)):
+                    self.report(requestId: id, message: message, permission: nil, actions: [.openModelSettings])
                 case let .failure(error):
                     let permission: PermissionKind? = error == .permissionDenied ? .accessibility : nil
                     self.report(requestId: id, message: self.session.t(error.text), permission: permission)
@@ -108,16 +104,6 @@ extension PanelController {
                 }
             }
         }
-    }
-
-    /// 黑名单要的前台应用名：**现查**（pid → NSRunningApplication），不读激活通知的缓存——
-    /// 那是安全闸，缓存晚一拍就会让刚切到的密码管理器漏过去。取不到 pid（没有辅助功能权限）时不拦：
-    /// 紧接着的取词同样要这个权限，会如实报缺权限。
-    nonisolated static func blockNotice(_ engine: Engine) -> String? {
-        let name = FrontmostApp.liveToken().flatMap(pid_t.init)
-            .flatMap { NSRunningApplication(processIdentifier: $0)?.localizedName }
-        guard let name else { return nil }
-        return engine.selectionBlockNotice(appName: name)
     }
 }
 

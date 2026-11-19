@@ -146,7 +146,7 @@ enum SelectionSelfTest {
             let expected = switch error {
             case .notWritable, .noSelection: true
             case let .other(text): ["error.secureInput", "error.targetChanged"].contains(text.key)
-            case .permissionDenied: false
+            case .permissionDenied, .blocked: false
             }
             check("readFocusText", expected, "没有可翻译的焦点文本：\(error)")
         }

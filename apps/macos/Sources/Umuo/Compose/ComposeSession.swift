@@ -81,6 +81,9 @@ final class ComposeSession {
     private func scheduleDebounce() {
         debounceTask?.cancel()
         debounceTask = nil
+        // 每次编辑都撤销上次排队的输入，避免防抖间隙发出已过期的文本。
+        queue.pending = nil
+        flushAfterCommit = false
         guard autoTranslate else { return }
         let delay = debounceDelay
         debounceTask = Task { [weak self] in
@@ -143,11 +146,13 @@ final class ComposeSession {
             && sentText == input.trimmingCharacters(in: .whitespacesAndNewlines) && sentOverrides == overrides
     }
 
+    var canPaste: Bool { settled && state.warning == nil }
+
     // MARK: - 操作
 
     /// ⌘↩ 复制并关闭；⌘⇧↩ 复制并粘贴回唤出撰写窗之前的应用。两种都收起撰写窗（PRD §5.3）。
     func commit(paste: Bool) {
-        guard settled, let backend else { return }
+        guard paste ? canPaste : settled, let backend else { return }
         submitting = true
         let requestId = state.requestId
         let text = state.translation

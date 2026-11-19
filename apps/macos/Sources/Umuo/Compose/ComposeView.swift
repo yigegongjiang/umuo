@@ -178,7 +178,7 @@ struct ComposeView: View {
             PanelButton(t("compose.copyPaste"), bordered: true) { session.commit(paste: true) }
                 .accessibilityIdentifier("compose.copyPaste")
                 .floatingControl("compose.copyPaste")
-                .disabled(!session.settled)
+                .disabled(!session.canPaste)
                 .help("\(t("compose.copyPaste")) (⌘⇧↵)")
             PanelButton(t("compose.copy"), systemImage: "doc.on.doc", iconOnly: false, prominent: true) { session.commit(paste: false) }
                 .accessibilityIdentifier("compose.copy")
