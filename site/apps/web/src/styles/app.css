@@ -66,6 +66,8 @@
     --button-fill-hover: #8c5d3f;
     --button-edge: #553620;
     --button-text: #ffffff;
+    /* 按钮里「预览版」标签的底：浅色主题压深一档（白色半透明叠在深咖上只有 4.4:1），深色与高对比沿用提亮 */
+    --status-tag-fill: rgb(85 54 32 / 0.5);
     /* 「节拍」厚底可按压：深度与位移是几何量、不随主题变化，三个主题共享 */
     --press-depth: 4px;
     --press-depth-active: 1px;
@@ -104,6 +106,7 @@
     --button-fill-hover: #d39e77;
     --button-edge: #8a5b3d;
     --button-text: #1c140f;
+    --status-tag-fill: rgb(255 255 255 / 0.18);
   }
 }
 
@@ -131,6 +134,7 @@
     --button-fill-hover: #ffd2ad;
     --button-edge: #c98a5a;
     --button-text: #000000;
+    --status-tag-fill: rgb(255 255 255 / 0.18);
   }
 }
 
@@ -285,7 +289,7 @@
     padding: 0.0625rem 0.375rem;
     border-radius: 4px;
     border: 1px solid rgb(255 255 255 / 0.28);
-    background: rgb(255 255 255 / 0.18);
+    background: var(--status-tag-fill);
     font-size: 0.75rem;
     font-weight: 500;
   }
@@ -1012,6 +1016,9 @@
     }
     .site-footer {
       border-top: 0;
+    }
+    .demo-hint[data-page-try] {
+      display: none;
     }
   }
 }

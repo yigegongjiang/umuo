@@ -184,7 +184,13 @@ function HeroDemo({ demo }: { demo: SiteContent['hero']['demo'] }) {
           ),
         )}
       </div>
-      <figcaption className="demo-hint">{mode.hint}</figcaption>
+      {/* 划词与闪电替换的提示是「在这个页面按键试试」，触屏上没有键盘，由 CSS 隐藏（data-page-try） */}
+      <figcaption
+        className="demo-hint"
+        data-page-try={mode.id === 'read' || mode.id === 'write' ? '' : undefined}
+      >
+        {mode.hint}
+      </figcaption>
     </figure>
   )
 }
