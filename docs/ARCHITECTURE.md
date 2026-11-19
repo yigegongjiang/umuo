@@ -1,7 +1,7 @@
 # umuo 架构
 
 > 本文描述当前代码结构（Swift + SwiftUI + AppKit 客户端，Rust 内核经 UniFFI 调用；旧 Tauri / WebView 与 Rust 平台层已于 2026-10-22 删除）。
-> 产品范围见 [PRD](PRD.md)，功能验收见 [PRD-CONFORMANCE.md](PRD-CONFORMANCE.md)，发布流程见 [SWIFTUI-MIGRATION.md](SWIFTUI-MIGRATION.md)。
+> 产品范围见 [PRD](PRD.md)，功能验收见 [实现与验收清单](PRD-CONFORMANCE.md)，发布流程见 [发布手册](release/RELEASE.md)。
 > 多模型对比、风格 / 术语、费用预算、模型路由与收藏已退出；三项核心是文字翻译（含原地替换）、OCR 截图翻译、语音输入后整理 / 翻译。
 
 ## 1. 全貌
@@ -38,7 +38,7 @@ Swift 负责界面、窗口与系统集成；可复用应用逻辑放 `umuo-app`
 由 AppKit 补充非激活浮窗、菜单栏与窗口管理。不维护自己的设计令牌：`Theme/` 只有外观选择（跟随系统 / 浅色 / 深色）
 与浮窗材质（macOS 26 的 Liquid Glass，更早回落系统材质）；视觉与辅助功能仍需真机走查。
 
-## 2.1 应用层与宿主
+### 2.1 应用层与宿主
 
 `AppCore` 持有设置、历史库、HTTP 客户端与请求登记。
 流水线中途必须现取的平台能力通过 `Host` 回调 Swift 的 `SwiftHost`；可以提前取得的值由 Swift 随请求传入。
@@ -54,7 +54,7 @@ Swift 负责界面、窗口与系统集成；可复用应用逻辑放 `umuo-app`
 回调全部同步，在 Rust 工作线程执行，不等待用户授权，也不得 `DispatchQueue.main.sync`。
 需要授权时返回可操作错误，由界面引导用户处理，避免主线程与 Rust 同步调用互相等待。
 
-## 2.2 事件协议
+### 2.2 事件协议
 
 流水线通过 `umuo_app::event` 的 `TranslateSink` 发事件。
 `umuo-ffi/src/event.rs` 镜像成 UniFFI enum / record，Swift sink 收到后按顺序放入 AsyncStream。
@@ -68,7 +68,7 @@ Swift 负责界面、窗口与系统集成；可复用应用逻辑放 `umuo-app`
 
 `crates/umuo-app/tests/event_wire.rs` 保留历史 JSON 契约快照；当前 Swift 通过 FFI 类型接收事件，不经过 WebView IPC。
 
-## 2.3 线程约定
+### 2.3 线程约定
 
 - Swift 在后台完成阻塞取词、Engine 初始化、SQLite 和设置操作，UI 状态在 MainActor 更新。
 - Engine 自建多线程 tokio 运行时；不开 UniFFI 的 tokio feature，保持连接池只活在这一套运行时。
@@ -334,6 +334,6 @@ Bundle ID 保持 `app.umuo.desktop`；配置目录、历史库、Keychain 服务
 
 免费、MIT 开源、纯 BYOK，没有许可证或收费路径。客户端只发 Apple Silicon（arm64）、macOS 14+ 的包：
 客户端改动合入 main 由 `release.yml` 发布到 GitHub Releases，应用内更新用 Sparkle（appcast 随 Release 发布），
-正式包用固定的自签名证书签名（PR 门禁与 `--quick` 冒烟为 ad-hoc），未经 Apple 公证；自签名包需关闭库校验，换 Developer ID 时 Key 要重新保存，见 `SWIFTUI-MIGRATION.md`。Developer ID 公证、真实 N → N+1 更新与 Homebrew Cask 待做，见 `SWIFTUI-MIGRATION.md`。
-真机权限、焦点、语音交付与原生 release 性能仍需按 `NATIVE-WALKTHROUGH.md` 验收；旧 Tauri 性能数字只是历史基线。
+正式包用固定的自签名证书签名（PR 门禁与 `--quick` 冒烟为 ad-hoc），未经 Apple 公证；自签名包需关闭库校验，换 Developer ID 时 Key 要重新保存。Developer ID 公证、真实 N → N+1 更新与 Homebrew Cask 待做，详见 [发布手册](release/RELEASE.md)。
+真机权限、焦点、语音交付与原生 release 性能仍需按 [真机走查](release/NATIVE-WALKTHROUGH.md) 验收；旧 Tauri 性能数字只是历史基线。
 浮窗按光标定位，不是精确选区边界；截图采用系统框选，覆盖模式未做。

@@ -1,7 +1,8 @@
 # 原生真机走查
 
-文字、截图与语音三项核心的真机基线（Apple Silicon、macOS 14+）。自动测试不覆盖真实权限、焦点、剪贴板、麦克风与系统按键，这些只能在这里验。
-每项填「通过 / 不通过 / 跳过」和一句现象；不通过的附截图或复现步骤。正式发布相关（DMG、公证、升级）留给 [开发计划](IMPLEMENTATION-PLAN.md) 阶段 G，不在本表。
+在 Apple Silicon、macOS 14+ 上验证文字、截图和语音流程，重点观察权限、焦点、剪贴板、麦克风与系统按键。DMG 安装、公证和升级按 [开发计划阶段 G](../IMPLEMENTATION-PLAN.md#阶段-g-正式发布) 验收。
+
+每项记录「通过」「不通过」或「跳过」并简述现象。遇到失败时附截图或复现步骤。
 
 ## 发版前快速走查（约 15 分钟）
 
@@ -74,7 +75,7 @@
 
 ## 性能测量
 
-发布门槛（[PRD](PRD.md) §3.2、§8）用原生 **release** 包测，不用 debug 构建或冒烟包：`sh apps/macos/scripts/bundle.sh --version X.Y.Z` 产出的 `apps/macos/dist.noindex/umuo.app`。
+发布门槛（[PRD](../PRD.md) §3.2、§8）用原生 **release** 包测，不用 debug 构建或冒烟包：`sh apps/macos/scripts/bundle.sh --version X.Y.Z` 产出的 `apps/macos/dist.noindex/umuo.app`。
 
 - **内存用 `phys_footprint`**：启动后静置 12 秒，`footprint -p <pid>`（与活动监视器一致）。不要用 `ps` 的 RSS：它把共享的系统框架页重复计入，
   会把同一个进程算大几倍。语音模型加载后另记峰值与空闲卸载后的回落。

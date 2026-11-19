@@ -1,25 +1,22 @@
 # 参与贡献
 
-umuo 以 [MIT](LICENSE) 许可证开源（含官网 `site/`）。欢迎提 Issue 与 Pull Request。
-
-## 许可
-
-提交到本仓库的贡献按 MIT 许可证入站即出站：你提交的代码以与本项目相同的 MIT 许可证授权，不需要另签 CLA。
-请只提交你有权以 MIT 授权的代码；复制第三方源码时，按 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) 的规则登记来源与许可。
-
-「umuo」名称与图标不随 MIT 授权。分发修改版时请换用其他名称与图标，避免与官方发行版混淆。
+欢迎提交 Issue 和 Pull Request。请用仓库模板记录复现步骤、预期行为和验证结果。安全漏洞请使用 [私密报告渠道](SECURITY.md)，并从日志和截图中移除 API Key。
 
 ## 开发前
 
-1. 读 [AGENTS.md](AGENTS.md)：分层规则、常用命令与测试约定都在那里，人和 agent 共用。
-2. 产品范围以 [docs/PRD.md](docs/PRD.md) 为准；已退出范围的功能（收费与许可证、多模型对比、风格与术语管理等）不接受恢复。
-3. 翻译逻辑写在 Rust（`crates/umuo-core`、`crates/umuo-app`），平台能力写在 Swift 宿主；API Key 只进系统 Keychain。
+1. 从 [项目文档](docs/README.md) 找到对应入口。功能范围和验收指标以 [产品需求](docs/PRD.md) 为准。
+2. 按 [项目指引](AGENTS.md) 选择实现层、构建命令和测试方式。修改官网或 Worker 时，另读 [官网指引](site/AGENTS.md)，在 `site/` 安装依赖并运行命令。
+3. 修改 README 时以 [简体中文版](README.md) 为准，同步 [四种译本](docs/readme/)。来不及补齐时，在 PR 里注明缺少的语言。
 
 ## 提交 PR
 
-- 一个 PR 只做一件事；注释与提交信息用中文（代码标识符用英文）。提交标题用一句话说清做了什么（如「修复剪贴板取词降级在源应用写入期间误判放弃」），需要时在正文里写原因与取舍。
-- 提交前在本机跑 `bun run verify` 并全部通过；改了官网时在 `site/` 里另跑 `bun run verify`。在 PR 描述里贴出结果。
-- 改动客户端（`apps/macos/**` 等）的 PR 合入 `main` 后会**自动发布正式版**，请确认它可以直接发给用户。
-- 不要在 Issue、PR、日志或截图里贴 API Key；安全问题按 [SECURITY.md](SECURITY.md) 私下报告。
-- README 有五种语言（与官网一致：简体中文 `README.md` 为准，另有 en / zh-TW / ja / ko）。改 `README.md` 时同步其余四份；做不到就在 PR 里说明，由维护者补。
-- 新功能或修复附带测试；测试不访问真实 Keychain、用户剪贴板、真实模型或投递系统按键。
+- 每个 PR 聚焦一项变更。注释和提交信息用中文，代码标识符用英文。提交标题写明具体改动，例如「修复复制取词时误判用户干预」，需要时在正文说明原因和取舍。
+- 为新功能和修复补充测试。用替身和本地桩隔离真实 Keychain、用户剪贴板、供应商端点与系统按键。
+- 提交前在仓库根目录运行 `bun run verify`。涉及官网时，再在 `site/` 运行 `bun run verify`。在 PR 里贴出结果；涉及系统交互时，按 [真机走查](docs/release/NATIVE-WALKTHROUGH.md) 记录所测机型、macOS 版本和现象。
+- 命中发布路径的客户端改动合入 `main` 后会自动发正式版。合并前确认改动可直接交付给用户。 [发布手册](docs/release/RELEASE.md)
+
+## 许可
+
+贡献按项目的 [MIT 许可证](LICENSE) 授权，无需另签 CLA。只提交有权授权的代码。复制第三方源码时，按 [第三方声明](THIRD_PARTY_NOTICES) 登记来源与许可。
+
+「umuo」名称和图标不随 MIT 许可证授权。分发修改版时，请使用其他名称与图标。

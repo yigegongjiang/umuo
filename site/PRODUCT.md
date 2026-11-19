@@ -3,7 +3,7 @@
 <!-- impeccable:product-schema 1 -->
 
 本文件记录 umuo.app 官网（`site/`）设计工作所需的产品事实。产品需求以根目录 [PRD](../docs/PRD.md) 为准，
-实现与发布进度以 `docs/PRD-CONFORMANCE.md` 为准；两者变化时以它们为准并同步本文件。
+实现与验收进度见 [验收清单](../docs/PRD-CONFORMANCE.md)。两份文档更新时同步这里的产品事实。
 
 ## Platform
 
@@ -45,7 +45,7 @@ umuo 免费、按 MIT 许可证开源，模型调用费用直接付给用户自�
 - 默认快捷键（可在设置修改）：划词翻译 `⌃⌃`、输入翻译 `⌥⌘A`、输入框原地替换 `⌥⌥`、截图翻译 `⌥⌘O`、语音整理按住 `⌥⌘V`、语音翻译按住 `⌃⌘V`。
 - 首次使用：选供应商、填 Key、选模型、验证连接；系统权限按使用场景申请。
 - 官网形态：只有首页一屏，不再提供条款与隐私页（`/pricing`、`/terms`、`/privacy` 已删除，旧地址返回 404）；地址不带语言前缀，按 cookie / Accept-Language 返回对应语言。
-- 下载走 Worker `/download/macos`（跳到 GitHub Releases 最新版）；当前为未经 Apple 公证的预览版。
+- 下载走 Worker `/download/macos`，跳到 GitHub Releases 标为 Latest 的正式版。官网按钮标注「预览版」，当前安装包未经 Apple 公证。
 
 ## Capabilities and Constraints
 
@@ -67,7 +67,7 @@ umuo 免费、按 MIT 许可证开源，模型调用费用直接付给用户自�
 ## Evidence on Hand
 
 - **用户确认存在、但仓库里还没有**：真实客户端截图 / 录屏、真实用户评价、性能实测数据。使用前须向用户索取原件与授权；拿到之前不得用占位或编造内容代替。
-- 原生客户端的性能数据待实测，测量方法见 [真机走查](../docs/NATIVE-WALKTHROUGH.md)。
+- 原生客户端的性能数据待实测，测量方法见 [真机走查](../docs/release/NATIVE-WALKTHROUGH.md)。
 - 仓库现有资产：水獭 logo（`apps/web/public/favicon.svg`）、自托管 Open Sans（`apps/web/public/fonts/open-sans/`）、首屏读 / 写 / 截图 / 说四个演示示例（`content/*.ts` 的 `hero.demo`）。
 - 没有媒体报道、客户 logo、案例研究，不得编造。
 

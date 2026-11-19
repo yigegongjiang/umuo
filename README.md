@@ -4,11 +4,9 @@
 
 **macOS 翻译与语音表达工具 · 免费开源 · 自带模型 Key**
 
-A free, open-source macOS translator: translate in place, select-to-translate, screenshot OCR and voice input — with your own API key.
-
 macOS 14+ · Apple Silicon · Swift + SwiftUI + AppKit · Rust 共享核心 · 纯 BYOK · MIT 开源
 
-**简体中文** · [English](README.en.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
+**简体中文** · [English](docs/readme/README.en.md) · [繁體中文](docs/readme/README.zh-TW.md) · [日本語](docs/readme/README.ja.md) · [한국어](docs/readme/README.ko.md)
 
 [官网](https://umuo.app) · [下载（Apple Silicon）](https://umuo.app/download/macos) · [所有版本](https://github.com/youming-ai/umuo/releases) · [贡献指南](CONTRIBUTING.md)
 
@@ -21,43 +19,50 @@ macOS 14+ · Apple Silicon · Swift + SwiftUI + AppKit · Rust 共享核心 · �
 
 ---
 
-## 这是什么
+## 主要功能
 
-umuo 是 macOS 原生的翻译与语音表达工具，当前产品范围为：
+| 核心 | 范围 |
+| --- | --- |
+| 文字翻译 | 划词（⌃⌃）、输入翻译（⌥⌘A）、输入框原地替换（⌥⌥）；复制、朗读与轻量结果窗 |
+| OCR 截图翻译 | 系统框选（⌥⌘O）、Apple Vision 本地识别、修正原文后翻译 |
+| 语音表达 | 按住 ⌥⌘V 说话整理成通顺文字、按住 ⌃⌘V 说话翻译成目标语言；本机转写，结果写回原输入框 |
 
-| 核心 | 范围 | 当前状态 |
-| --- | --- | --- |
-| 文字翻译 | 划词（⌃⌃）、输入翻译（⌥⌘A）、输入框原地替换（⌥⌥）；复制、朗读与轻量结果窗 | 已实现，待真机验收 |
-| OCR 截图翻译 | 系统框选（⌥⌘O）、Apple Vision 本地识别、修正原文后翻译 | 已实现，待真机验收 |
-| 语音表达 | 按住 ⌥⌘V 说话整理成通顺文字、按住 ⌃⌘V 说话翻译成目标语言；本机转写，结果写回原输入框 | 已实现，待真机验收 |
-
-umuo 完全免费、以 MIT 许可证开源，纯 BYOK：用户自带模型 Key，模型调用直接向供应商付费；umuo 不收费，没有许可证、试用、订阅、官方额度或 AI 网关。
+umuo 按 MIT 许可证开源，可免费使用。请配置自己的模型。使用付费服务时，模型用量由供应商直接计费。
 
 模型 Key 存系统 Keychain，供应商请求从本机直连用户配置的端点。语音在本机用 transcribe.cpp + Qwen3-ASR-0.6B 转写，
 不需要额外的语音 Key；整理与翻译复用文字模型，使用云端文字模型时，转写文本会发送给该供应商。
 
 ## 下载与安装
 
-从 [umuo.app/download/macos](https://umuo.app/download/macos) 下载（macOS 14+，仅 Apple Silicon），
-它会跳到 [GitHub Releases](https://github.com/youming-ai/umuo/releases) 最新版的安装包（`umuo-v<版本>.dmg`）；每次客户端改动合入 `main` 都会自动发布一个新的正式版（标为 Latest），
-已安装的应用可在「设置 › 关于」里检查更新。
-安装包尚未经 Apple 公证：首次打开如被拦截，到**系统设置 → 隐私与安全性**点「仍要打开」。
-也可以按下方「从源码构建」自己编译。暂不提供 Homebrew 安装（见 [开发计划](docs/IMPLEMENTATION-PLAN.md)「待办」）。
+在 Apple Silicon Mac（macOS 14 或更新版本）上，[下载安装包](https://umuo.app/download/macos)。打开 `umuo-v<版本>.dmg`，将 umuo 拖到「应用程序」。
 
-## 开发文档
+安装包尚未经 Apple 公证。如果 macOS 拦截首次启动，请到「系统设置 › 隐私与安全性」选择「仍要打开」。已安装的版本可在「设置 › 关于」检查更新。所有安装包见 [GitHub Releases](https://github.com/youming-ai/umuo/releases)。
 
-真机验收待完成。
+## 开始使用
 
-- [产品需求](docs/PRD.md)
-- [客户端架构](docs/ARCHITECTURE.md)
-- [首版开发计划](docs/IMPLEMENTATION-PLAN.md)
-- [实现与验收清单](docs/PRD-CONFORMANCE.md)
-- [发布与 Sparkle 密钥](docs/SWIFTUI-MIGRATION.md)
-- [真机走查](docs/NATIVE-WALKTHROUGH.md)
-- [贡献指南](CONTRIBUTING.md)
-- [安全策略](SECURITY.md)
+### 配置模型与划词翻译
 
-官网 [umuo.app](https://umuo.app)（单页首页）与 Worker 在 [site/](site/)，合入 `main` 后由 Cloudflare Workers Builds 自动部署。
+1. 打开 umuo，在「设置 › 引擎」选择模型供应商并保存 API Key。使用本地模型时，配置端点与模型名。
+2. 在「系统设置 › 隐私与安全性 › 辅助功能」中允许 umuo。使用开发构建时，授权启动它的终端或 IDE。
+3. 在其他 App 中选中文字，连按两下 Control（`⌃⌃`），译文会在鼠标附近的浮窗中逐步显示。
+
+### 语音输入
+
+在任意输入框里按住 **⌥⌘V** 说话，松开后整理成通顺的文字写回输入框；按住 **⌃⌘V** 则翻译成目标语言再写回。
+首次使用会请求麦克风权限，并从 Hugging Face 下载约 560 MB 的转写模型；写回输入框同样需要辅助功能权限。
+两个键都可以在**设置 → 翻译 → 语音输入**里修改。
+
+### PopClip
+
+装有 [PopClip](https://www.popclip.app/)（2024.12 及以上）时，执行 `open scripts/popclip/umuo.popclipext` 安装扩展。
+之后选中文字、点 PopClip 栏里的 umuo 图标，译文同样出现在鼠标附近的浮窗里。扩展经 `umuo://translate?text=…` 唤起 umuo；umuo 只接受 PopClip 发来的这个链接。
+
+## 隐私
+
+- BYOK 模式下，请求只发往你自己配置的端点；umuo 的服务器收不到你的内容，也收不到你的 Key。
+- 翻译历史存在本机 SQLite，可搜索、删除，可设置保留天数，也可完全关闭。
+- 语音在本机转写：录音只写入临时文件，转写结束或取消后立即删除，不发给 umuo，也不发给模型供应商。
+- 默认不开启内容遥测。
 
 ## 从源码构建
 
@@ -86,55 +91,23 @@ bun run dev:macos    # 编 Rust 绑定与 SwiftUI 客户端后启动（macOS 14+
 | `bun run verify:macos` | Swift 构建、Swift Testing、FFI 自检与打包冒烟 |
 | `bun run verify` | 提交前完整门禁，与 GitHub Actions 的 CI 对齐 |
 
-### 跑通划词翻译需要一次系统授权
-
-启动客户端后，先在**设置 → 引擎**里填一个供应商的 API Key，然后到
-**系统设置 → 隐私与安全性 → 辅助功能**里勾上 `umuo`（开发模式下是运行它的终端或 IDE）。
-没有这个权限，客户端读不到你选中的文字——浮窗会直接告诉你这件事，而不是静默失败。
-
-之后在任意 App 里选中文字、连按两下 **⌃**（⌃⌃），译文会以流式方式出现在鼠标附近的浮窗里。
-
-### 语音输入
-
-在任意输入框里按住 **⌥⌘V** 说话，松开后整理成通顺的文字写回输入框；按住 **⌃⌘V** 则翻译成目标语言再写回。
-首次使用会请求麦克风权限，并从 Hugging Face 下载约 560 MB 的转写模型；写回输入框同样需要辅助功能权限。
-两个键都可以在**设置 → 翻译 → 语音输入**里修改。
-
-### PopClip
-
-装有 [PopClip](https://www.popclip.app/)（2024.12 及以上）时，执行 `open scripts/popclip/umuo.popclipext` 安装扩展。
-之后选中文字、点 PopClip 栏里的 umuo 图标，译文同样出现在鼠标附近的浮窗里。扩展经 `umuo://translate?text=…` 唤起 umuo；umuo 只接受 PopClip 发来的这个链接。
-
 ## 仓库结构
 
-```
-apps/macos/          Swift + SwiftUI + AppKit 原生客户端（SwiftPM）
-  Sources/Umuo/      App、Platform、Panel、Compose、Voice、History、Settings、Onboarding、Quick
-  Tests/UmuoTests/   Swift Testing：视图模型与纯规则
-  packaging/         Info.plist、图标与签名权限
-  scripts/           Rust 绑定构建、原生开发、验证与打包
-crates/umuo-ffi/     UniFFI 导出与类型转换（链接进 App 的静态库）
-crates/umuo-bindgen/ 生成 Swift 绑定的 uniffi-bindgen（只在构建时用，不进发布产物）
-crates/umuo-app/     共享应用逻辑：设置、翻译流水线、语音会话与后处理、历史
-  tests/             本地 SSE 流水线回归与事件兼容快照
-crates/umuo-core/    平台无关翻译内核：Provider、Prompt、流式解析、计量
-crates/umuo-store/   本地 SQLite：历史（旧收藏与用量表只保留数据）
-site/               官网与 Worker，独立 Bun 项目
-scripts/            图标生成、第三方许可核查、原生发布工具与 PopClip 扩展
-docs/              PRD、架构、发布、真机走查与验收清单
-```
+- [`apps/macos/`](apps/macos/) — 原生 macOS 客户端、Swift 测试和打包脚本
+- [`crates/`](crates/) — Rust 应用逻辑、翻译内核、SQLite 存储和 Swift 绑定
+- [`site/`](site/README.md) — 官网与 Cloudflare Worker，使用独立的 Bun 项目
+- [`scripts/`](scripts/) — 开发工具、语音评测和 PopClip 扩展
+- [`docs/`](docs/README.md) — 项目文档、发布手册和 README 译本
 
-## 隐私
+## 开发文档
 
-- BYOK 模式下，请求只发往你自己配置的端点；umuo 的服务器收不到你的内容，也收不到你的 Key。
-- 翻译历史存在本机 SQLite，可搜索、删除，可设置保留天数，也可完全关闭。
-- 语音在本机转写：录音只写入临时文件，转写结束或取消后立即删除，不发给 umuo，也不发给模型供应商。
-- 默认不开启内容遥测。
+产品需求、架构、验收状态和发布手册见 [项目文档](docs/README.md)。
+
+官网 [umuo.app](https://umuo.app)（单页首页）与 Worker 在 [site/](site/)，合入 `main` 后由 Cloudflare Workers Builds 自动部署。
 
 ## 参与贡献
 
-欢迎提 Issue 与 Pull Request（Issue 与 PR 都有模板；**不要在任何地方贴出你的 API Key**）。安全漏洞请按 [SECURITY.md](SECURITY.md) 私下报告，不要开公开 Issue。开发前先读 [AGENTS.md](AGENTS.md)（分层规则、命令与测试约定，人和 agent 共用）与 [CONTRIBUTING.md](CONTRIBUTING.md)；
-提交前在本机跑通 `bun run verify`（改官网时另在 `site/` 跑 `bun run verify`），PR 会由 CI 再跑一遍。
+欢迎提交 Issue 或 Pull Request。开发流程、测试和提交流程见 [贡献指南](CONTRIBUTING.md)。安全漏洞请通过 [私密报告渠道](SECURITY.md) 提交。
 
 ## 许可
 

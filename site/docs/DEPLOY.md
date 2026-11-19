@@ -1,7 +1,7 @@
 # umuo.app 部署
 
 官网（Vite + React）与 API（Void 中间件）运行在同一个 Cloudflare Worker：`umuo`（2026-11-02 由 `umuo-app` 改名）。
-仓库以 `void.config.ts` 为 Worker 配置来源，使用 Void 部署、Vite 构建、`cf` 管理 Cloudflare 资源。
+仓库以 `void.config.ts` 为 Worker 配置来源，使用 Vite 与 Void 构建，使用 `cf` 部署和管理 Cloudflare 资源。
 
 线上已使用 Void 构建并通过 `cf` 部署；接管记录与 Workers Builds 设置见 [VOID-MIGRATION.md](VOID-MIGRATION.md)。
 
@@ -54,8 +54,7 @@ Worker 没有 secret，部署前不需要核对 secret；Workers Builds 与回�
 
 ## 客户端安装包
 
-安装包在 GitHub Releases（客户端改动合入 main 时由根目录 `.github/workflows/release.yml` 发布，见 `docs/SWIFTUI-MIGRATION.md`），
-官网不存任何安装包。Worker 只做 302 跳转（`no-store`）：
+客户端的发布工作流把安装包上架到 GitHub Releases，官网 Worker 负责 302 跳转（`no-store`）。[客户端发布手册](../../docs/release/RELEASE.md)
 
 | 路径 | 跳到 |
 | --- | --- |

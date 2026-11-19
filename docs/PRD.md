@@ -1,17 +1,16 @@
 # umuo 产品需求文档
 
-版本 v0.8 · 2026-11-02 · 当前产品范围；开发进度见验收清单。
+版本 v0.8 · 2026-11-02
 
-本版依据用户本轮决定替代 v0.4：三项核心为文字翻译、OCR 截图翻译、语音输入后润色或翻译；
-客户端免费、MIT 开源，用户自带模型，umuo 不提供 AI 网关（2026-11-02 起不再收费，取代 v0.6 的买断方案）。语音为首版核心，原地翻译保留。
-v0.8 只同步现状：仓库已公开、官网只做首页与下载跳转、客户端只发 Apple Silicon（arm64）包。
-旧范围及证据已归档，不再要求按竞品功能清单补齐。
+本文定义 umuo 的产品范围与首版验收条件。三项核心是文字翻译（含原地替换）、OCR 截图翻译和语音输入后整理或翻译。客户端免费、MIT 开源，使用用户自备的模型。官网提供首页与下载入口，客户端发行包只包含 Apple Silicon（arm64）版本。
+
+v0.6 中的买断方案于 2026-11-02 退出产品范围。旧范围和证据已归档。
 
 ## 1. 文档与范围
 
-- 产品需求以本文为准，进度与实现证据见 [PRD-CONFORMANCE.md](PRD-CONFORMANCE.md)。
-- 开发次序与完成条件见 [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)。
-- 现有代码的分层见 [ARCHITECTURE.md](ARCHITECTURE.md)，发布流程与 Sparkle 密钥见 [SWIFTUI-MIGRATION.md](SWIFTUI-MIGRATION.md)。
+- 产品需求以本文为准，进度与实现证据见 [实现与验收清单](PRD-CONFORMANCE.md)。
+- 开发次序与完成条件见 [首版开发计划](IMPLEMENTATION-PLAN.md)。
+- 现有代码的分层见 [客户端架构](ARCHITECTURE.md)，发布流程与 Sparkle 密钥见 [发布手册](release/RELEASE.md)。
 
 仅做 macOS 14+，Swift 6、SwiftUI、AppKit 与 Rust / UniFFI；只支持 Apple Silicon（M 系列芯片，安装包只含 arm64）。源码以 MIT 开源。
 “已实现”与“已发布”分别记录，文档改版不代表功能已删除或已交付。
@@ -50,7 +49,7 @@ v0.8 只同步现状：仓库已公开、官网只做首页与下载跳转、客
 
 三项核心按 §5 的场景验证；性能以原生 release 包测量，内存用 phys_footprint。
 语音分开记录录音结束至转写完成、后处理完成、文字交付的冷/热延迟，不预先承诺未经测量的两秒指标。
-测量方法见 [NATIVE-WALKTHROUGH.md](NATIVE-WALKTHROUGH.md)「性能测量」。
+测量方法见 [真机走查的性能测量](release/NATIVE-WALKTHROUGH.md#性能测量)。
 
 ### 3.3 非目标
 
@@ -232,4 +231,4 @@ Handy 为主要语音参考；Typeless 参考语音整理/翻译交互；不承�
 先收敛现有文字/OCR 范围并验证本地语音候选，再完成语音会话、文字后处理、输入交付和产品整合；
 随后完成官网与正式发布验证。各阶段交付条件见 [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)。
 客户端改动合入 main 即自动发布到 GitHub Releases（正式版、未公证），Sparkle 经同一 Release 的 appcast 更新。
-真实 N → N+1 更新与 Developer ID / 公证仍待验证；没有旧 Tauri 用户，不做旧版桥接。发布流程见 [SWIFTUI-MIGRATION.md](SWIFTUI-MIGRATION.md)。
+真实 N → N+1 更新与 Developer ID / 公证仍待验证；没有旧 Tauri 用户，不做旧版桥接。发布流程见 [发布手册](release/RELEASE.md)。

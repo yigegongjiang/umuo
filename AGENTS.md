@@ -1,16 +1,15 @@
 # umuo 项目指引
 
-本文件维护仓库的 agent 指令。修改官网或 Worker 前，另读 [site/AGENTS.md](site/AGENTS.md)，在 `site/` 使用独立的 Bun 项目。
+umuo 面向 Apple Silicon、macOS 14+，提供文字翻译、OCR 截图翻译和语音输入。客户端免费、MIT 开源，模型调用采用纯 BYOK。账号、收费、试用、官方额度和 AI 网关已退出产品范围。
 
-## 范围与入口
+## 按改动查阅
 
-umuo 是面向 Apple Silicon、macOS 14+ 的原生翻译与语音工具。核心功能是文字翻译（含原地替换）、OCR 截图翻译和语音输入后的整理或翻译。项目按 MIT 许可证开源，产品完全免费，模型调用采用纯 BYOK。账号、订阅、授权收费、试用、官方额度和 AI 网关均已退出产品范围。完整边界以产品需求为准。
-
-- **功能或入口变更**：先读 [PRD](docs/PRD.md)、[实现与验收清单](docs/PRD-CONFORMANCE.md) 和 [开发计划](docs/IMPLEMENTATION-PLAN.md)。完成后在验收清单记录实现证据、验证结果和剩余真机项目。
-- **线程、事件和 Host 接口**：读 [架构 §2.1–2.3](docs/ARCHITECTURE.md)。
-- **发布、签名、Sparkle 或升级兼容**：读 [发布与 Sparkle 密钥](docs/SWIFTUI-MIGRATION.md)。保留正式版 Latest 标记和安装包、更新包及 appcast 的命名规则。
-- **真机或性能验收**：按 [真机走查](docs/NATIVE-WALKTHROUGH.md) 操作。性能使用 release 包，内存记录 `footprint` 的 `phys_footprint`。
-- **README**：以简体中文为准，同步英文、繁体中文、日文和韩文。
+- **官网或 Worker**：先读 [官网指引](site/AGENTS.md)，在 `site/` 使用独立的 Bun 项目。
+- **功能或入口**：先读 [PRD](docs/PRD.md)、[实现与验收清单](docs/PRD-CONFORMANCE.md) 和 [开发计划](docs/IMPLEMENTATION-PLAN.md)。完成后在验收清单记录实现证据、验证结果和剩余真机项目。
+- **线程、事件或 Host 接口**：读 [架构 §2.1–2.3](docs/ARCHITECTURE.md#21-应用层与宿主)。
+- **发布、签名、Sparkle 或升级兼容**：读 [发布手册](docs/release/RELEASE.md)。保留正式版 Latest 标记，以及安装包、更新包和 appcast 的命名规则。
+- **真机或性能验收**：按 [真机走查](docs/release/NATIVE-WALKTHROUGH.md) 操作。性能使用 release 包，内存记录 `footprint` 的 `phys_footprint`。
+- **README**：以 [简体中文版](README.md) 为准，同步 [英文、繁体中文、日文和韩文译本](docs/readme/)。
 
 ## 实现约束
 

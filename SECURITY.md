@@ -21,7 +21,7 @@ Include the affected version, macOS version, reproduction steps and impact, and 
 - 辅助功能权限下的取词与写回：读到或写入不该碰的内容（如密码框）、误改用户剪贴板。
 - 自动更新：Sparkle 更新包与 appcast 的验签。
 - 代码签名：正式包目前用自签名证书并关闭了库校验（`disable-library-validation`），未经 Apple 公证；
-  利用这一点的注入方式欢迎报告，背景见 [docs/SWIFTUI-MIGRATION.md](docs/SWIFTUI-MIGRATION.md)。
+  利用这一点的注入方式欢迎报告，背景见 [发布手册](docs/release/RELEASE.md#为什么要尽快接自签名包关闭了库校验)。
 - 官网 Worker（`site/`）。
 
 不在范围内：你自己配置的模型供应商端点本身的安全问题；需要已获得本机管理员权限或物理接触才能利用的问题（除非它绕过了 macOS 的权限保护）。

@@ -1,10 +1,10 @@
 # PRD 实现与验收清单
 
-2026-11-02 · 对应 [PRD v0.8](PRD.md)；开发次序与精简批次见 [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)。
-本表区分已有代码、新范围调整、未实现与真机验收。范围确认不会自动把未实现项标成完成。
+按 [PRD v0.8](PRD.md) 逐项记录实现证据与剩余验收。开发次序见 [首版开发计划](IMPLEMENTATION-PLAN.md)，手动验证按 [原生真机走查](release/NATIVE-WALKTHROUGH.md) 执行。
 
-状态：✅ 已有实现及自动验证；🟡 已有基础，仍需新范围调整或验收；⬜ 未实现/待完成。
-✅ 不代表已发布，也不代替权限、焦点、多显示器和真实升级验证。
+- ✅ 已有实现和自动验证。真机或发布进度以各条目的记录为准。
+- 🟡 已有基础，仍需调整或补充验收。
+- ⬜ 尚未实现或验证。
 
 ## 文字翻译
 
@@ -68,7 +68,7 @@
 | R1 | §12 | Sparkle 代码与签名清单链路 | 🟡 | `App/AppUpdater.swift`、`bundle.sh`、`scripts/sparkle-appcast.ts`、`release.yml`：SUFeedURL 为 GitHub `releases/latest/download/appcast.xml`，enclosure 指向同版本 Release 的 `umuo.app.tar.gz`；正式包改用固定自签名证书（公钥随仓库、私钥在发布 Secrets），嵌套框架统一签名；2026-11-06 本机 arm64 release、主应用/框架/DMG 签名验证与包内自检（75 通过、9 项 TCC 跳过）通过；CI 导入脚本改为临时 runner 管理员域的非交互代码签名信任，记录阶段并限制两分钟；假命令回归覆盖授权失败不导出配置、临时 p12 清理及本机拒绝执行；Release 第 16 次运行已验证非交互导入成功；继续补齐 runner 钥匙串搜索列表及实际试签检查，防止查得到身份但 codesign 无法签名（Release 第 17 次运行已验证真实试签、主应用及嵌套框架自签名、Sparkle 更新包验签与正式 v0.2.17 发布成功）；普通门禁仍为 ad-hoc，N → N+1 与首次身份迁移未实测 |
 | R2 | §12 | 正式密钥、GitHub Releases 分发、N → N+1 更新 | 🟡 | 合入 main 自动发正式 Release（标 Latest，附件 `umuo-v<版本>.dmg` / `umuo.app.tar.gz` / `appcast.xml`），官网 `/download/macos` 302 到最新的 `umuo-v<版本>.dmg`，R2 已下线；从 GitHub 真实下载、验签、替换、重启全流程待实测，不能以本机清单生成替代 |
 | R3 | §8、§12 | Developer ID、公证、Gatekeeper、DMG 与系统权限 | ⬜ | 实际正式产物及安装/升级记录 |
-| R4 | §8、§12 | Apple Silicon 真机、原生 release 性能 | ⬜ | 按 `NATIVE-WALKTHROUGH.md`「性能测量」新测，旧 Tauri 数字不算通过 |
+| R4 | §8、§12 | Apple Silicon 真机、原生 release 性能 | ⬜ | 按 [真机走查](release/NATIVE-WALKTHROUGH.md)「性能测量」新测，旧 Tauri 数字不算通过 |
 | R5 | §12 | 官网直装与 Homebrew | 🟡 | 官网直装经 GitHub Releases 已打通（未公证）；Homebrew Cask 未建立。旧 Tauri 用户桥接不适用：没有旧 Tauri 用户，相关代码与脚本已删除 |
 
 ## 精简与验证

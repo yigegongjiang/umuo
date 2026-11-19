@@ -145,7 +145,7 @@ PR 冒烟仍为 ad-hoc。自签名不是 Developer ID/公证，首次从 ad-hoc 
 arm64 release 自签名打包通过，包内自检 75 项通过、9 项因 TCC 未授权跳过；主应用、嵌套框架与 DMG 的签名均通过验证。
 
 - [ ] 配置 Sparkle 正式密钥，从 GitHub Releases 实测 N → N+1 下载、验签、安装与重启（appcast 随 Release 发布，无需部署路由）。
-- [ ] Developer ID 签名、公证、Gatekeeper、DMG 拖装、TCC 与 Keychain 升级访问验收（Release 工作流要补的步骤见 [SWIFTUI-MIGRATION.md](SWIFTUI-MIGRATION.md)）。
+- [ ] Developer ID 签名、公证、Gatekeeper、DMG 拖装、TCC 与 Keychain 升级访问验收（Release 工作流要补的步骤见 [发布手册](release/RELEASE.md)）。
 - [ ] 原生 release 的性能、Apple Silicon 真机、VoiceOver、完整键盘操作、多显示器与权限走查。
 - [x] 官网直装：客户端改动合入 main 自动发 GitHub Releases 正式版（标 Latest，安装包名带版本号），官网 `/download/macos` 302 到最新的 `umuo-v<版本>.dmg`；R2 与旧 Tauri 桥接已删除（没有旧 Tauri 用户）。
 - [ ] Homebrew Cask。
@@ -163,9 +163,9 @@ arm64 release 自签名打包通过，包内自检 75 项通过、9 项因 TCC �
 
 代码侧已无未完成的阶段；剩下这些都需要人或外部账号，完成后在 [验收清单](PRD-CONFORMANCE.md) 记证据：
 
-1. **真机走查**：按 [NATIVE-WALKTHROUGH.md](NATIVE-WALKTHROUGH.md) 走文字 / 截图基线与语音全流程（各类输入框交付），并测原生 release 性能（阶段 A、C–E、G）。
+1. **真机验收**：按 [走查手册](release/NATIVE-WALKTHROUGH.md) 走文字 / 截图基线与语音全流程（各类输入框交付），并测原生 release 性能（阶段 A、C–E、G）。
 2. **Developer ID 签名与公证**（**暂缓**，2026-11-13）：需要付费的 Apple Developer Program（99 美元/年），目前不开通，发版继续用固定自签名证书。
-   接入步骤见 [SWIFTUI-MIGRATION.md](SWIFTUI-MIGRATION.md)，之后验 N → N+1 更新（阶段 G）。
+   接入步骤见 [发布手册](release/RELEASE.md)，之后验 N → N+1 更新（阶段 G）。
 3. **Homebrew Cask**（阶段 G）：Homebrew 5.0 起，未签名/未公证的 cask 不再收进官方 `homebrew/cask`（2026-09 起已不能 `brew install`），
    所以在接入 Developer ID 之前只能走自建 tap（如 `youming-ai/homebrew-tap`，`brew install youming-ai/tap/umuo`）；
    自建 tap 仍会被 Gatekeeper 拦首次打开，体验与官网直装相同。
