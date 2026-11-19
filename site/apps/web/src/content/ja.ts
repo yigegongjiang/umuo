@@ -6,9 +6,9 @@ import type { SiteContent } from './types'
  */
 export const ja: SiteContent = {
   seo: {
-    title: 'umuo — 読む・書くをワンキーで翻訳 | Mac AI 翻訳',
+    title: 'umuo — 書いたその場で翻訳 | Mac AI 翻訳',
     description:
-      'umuo は macOS 向けの AI 翻訳アプリ。⌃⌃ で選択範囲を翻訳、⌥⌘A で入力翻訳、⌥⌥ で入力欄をその場で置き換え、⌥⌘O でスクリーンショット翻訳。自分の API キー（GPT、Claude、Gemini など）やローカルモデルでそのまま使え、完全無料でサブスクリプションはなく、アカウントも不要です。音声入力にも対応しています。',
+      'umuo は無料・オープンソースの Mac 向け翻訳アプリです。⌥ を 2 回押すと入力欄の文章をその場で翻訳。選択範囲、入力テキスト、スクリーンショット、音声にも対応。自分の API キーやローカルモデルを使えます。アカウントやサブスクリプションは不要です。',
     ogLocale: 'ja_JP',
   },
   nav: {
@@ -18,9 +18,9 @@ export const ja: SiteContent = {
     themeToDark: 'ダークテーマに切り替え',
   },
   hero: {
-    title: '書いたその場で、\n外国語に',
+    title: '書いたその場で、\n言語をチェンジ',
     subtitle:
-      '⌥ を 2 回押せば、入力欄の文章がその場で外国語に。選択したテキストもスクショも翻訳できます。',
+      '⌥ を 2 回押せば、訳文は同じ入力欄に。コピペはひと休み。選んだ文字やスクショも訳せます。',
     demo: {
       label: '翻訳プレビュー',
       modes: [
@@ -29,9 +29,9 @@ export const ja: SiteContent = {
           hint: 'このページで ⌃ を 2 回押して試せます',
           name: '選択翻訳',
           keys: ['⌃', '⌃'],
-          before: 'The quick brown fox jumps over the lazy dog.',
+          before: 'That meeting could have been an email.',
           beforeLang: 'en',
-          after: 'すばしっこい茶色のキツネが怠け者の犬を飛び越える。',
+          after: 'あの会議、メールで済んだよね。',
           afterLang: 'ja',
         },
         {
@@ -39,9 +39,9 @@ export const ja: SiteContent = {
           hint: 'このページで ⌥ を 2 回押して試せます',
           name: '瞬間置換',
           keys: ['⌥', '⌥'],
-          before: '明日の午後 3 時に打ち合わせできますか？',
+          before: '明日の午後 3 時に短い打ち合わせを。本当に短めで。',
           beforeLang: 'ja',
-          after: 'Does 3 p.m. tomorrow work for the meeting?',
+          after: 'Quick meeting at 3 tomorrow. Really.',
           afterLang: 'en',
           note: '同じ入力欄のままのときだけ置き換えます。失敗・キャンセル時は原文を残します。',
         },
@@ -60,9 +60,9 @@ export const ja: SiteContent = {
           hint: '⌃⌘V を押したまま話すと、離したときに目標言語へ翻訳します。⌥⌘V なら同じ言語のまま整えます',
           name: '音声入力',
           keys: ['⌃', '⌘', 'V'],
-          before: 'えーと、会議を金曜日に移せますか',
+          before: 'えっと、金曜……じゃなくて木曜にコーヒーでもどう？',
           beforeLang: 'ja',
-          after: 'Could we move the meeting to Friday?',
+          after: 'Coffee on Thursday?',
           afterLang: 'en',
           note: '文字起こしは Mac 上で行い、初回利用時に約 560 MB の音声モデルをダウンロードします。',
         },
@@ -74,7 +74,7 @@ export const ja: SiteContent = {
       statusLabel: 'プレビュー版',
       note: '未公証のプレビュー版です。開けない場合は「プライバシーとセキュリティ」で「このまま開く」を押してください。',
       afterDownload: {
-        title: 'ダウンロードを開始しました。次の手順：',
+        title: 'ダウンロードを開始しました。次は umuo のインストールです。',
         steps: [
           'ダウンロードしたインストーラを開き、umuo を「アプリケーション」フォルダへドラッグします。',
           '初回起動がブロックされたら「システム設定 › プライバシーとセキュリティ」で「このまま開く」を押します。',

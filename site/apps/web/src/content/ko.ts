@@ -3,9 +3,9 @@ import type { SiteContent } from './types'
 /** 한국어 문안. 구조와 제품 정보는 zh-cn.ts를 기준으로 합니다. */
 export const ko: SiteContent = {
   seo: {
-    title: 'umuo: 읽고 쓰는 Mac AI 번역기',
+    title: 'umuo — 쓰는 자리에서 번역하는 Mac 앱',
     description:
-      'umuo는 macOS용 AI 번역 앱입니다. ⌃⌃ 선택 영역 번역, ⌥⌘A 입력 번역, ⌥⌥ 입력란 제자리 교체, ⌥⌘O 스크린샷 번역. 내 API 키(GPT, Claude, Gemini 등)나 로컬 모델을 연결해 쓰며, 완전 무료이며 구독도 계정도 필요 없습니다. 음성 입력도 지원합니다.',
+      'umuo는 무료 오픈소스 Mac 번역 앱입니다. ⌥를 두 번 눌러 입력창에서 바로 번역하세요. 선택한 텍스트, 직접 입력한 글, 스크린샷, 음성도 번역합니다. 내 API 키나 로컬 모델을 쓰며 계정과 구독은 필요 없습니다.',
     ogLocale: 'ko_KR',
   },
   nav: {
@@ -15,9 +15,9 @@ export const ko: SiteContent = {
     themeToDark: '다크 테마로 전환',
   },
   hero: {
-    title: '쓰는 그 자리에서\n바로 번역',
+    title: '쓰던 그 자리에서\n언어만 바꿔요',
     subtitle:
-      '⌥를 두 번 누르면 입력창의 글이 그 자리에서 외국어로 바뀝니다. 선택한 텍스트와 스크린샷도 번역합니다.',
+      '⌥를 두 번 누르면 번역문이 같은 입력창에 들어갑니다. 복사와 붙여넣기는 잠깐 쉬어도 돼요. 선택한 글과 스크린샷도 번역할 수 있어요.',
     demo: {
       label: '번역 미리보기',
       modes: [
@@ -26,9 +26,9 @@ export const ko: SiteContent = {
           hint: '이 페이지에서 ⌃를 두 번 눌러 보세요',
           name: '선택 번역',
           keys: ['⌃', '⌃'],
-          before: 'The quick brown fox jumps over the lazy dog.',
+          before: 'That meeting could have been an email.',
           beforeLang: 'en',
-          after: '날쌘 갈색 여우가 게으른 개를 뛰어넘습니다.',
+          after: '그 회의, 이메일 한 통이면 됐는데.',
           afterLang: 'ko',
         },
         {
@@ -36,9 +36,9 @@ export const ko: SiteContent = {
           hint: '이 페이지에서 ⌥를 두 번 눌러 보세요',
           name: '번개 교체',
           keys: ['⌥', '⌥'],
-          before: '내일 오후 3시에 회의 괜찮으세요?',
+          before: '내일 오후 3시에 짧게 회의해요. 진짜 짧게요.',
           beforeLang: 'ko',
-          after: 'Does 3 p.m. tomorrow work for the meeting?',
+          after: 'Quick meeting at 3 tomorrow. Really.',
           afterLang: 'en',
           note: '같은 입력창일 때만 바꿉니다. 실패하거나 취소하면 원문은 그대로 둡니다.',
         },
@@ -57,9 +57,9 @@ export const ko: SiteContent = {
           hint: '⌃⌘V를 누른 채 말하고 떼면 목표 언어로 번역합니다. ⌥⌘V를 쓰면 같은 언어로 매끄럽게 다듬습니다',
           name: '음성 입력',
           keys: ['⌃', '⌘', 'V'],
-          before: '음, 회의 금요일로 옮길 수 있을까',
+          before: '음, 금요일에… 아니, 목요일에 커피 한 잔 할래?',
           beforeLang: 'ko',
-          after: 'Could we move the meeting to Friday?',
+          after: 'Coffee on Thursday?',
           afterLang: 'en',
           note: '음성 인식은 Mac에서 처리하며, 처음 사용할 때 약 560MB의 음성 모델을 내려받습니다.',
         },
@@ -71,7 +71,7 @@ export const ko: SiteContent = {
       statusLabel: '프리뷰',
       note: '아직 Apple 공증 전인 프리뷰입니다. 차단되면 「개인정보 보호 및 보안」에서 「그래도 열기」를 누르세요.',
       afterDownload: {
-        title: '다운로드를 시작했습니다. 다음 단계:',
+        title: '다운로드를 시작했어요. 이제 umuo를 설치해 볼까요?',
         steps: [
           '받은 설치 파일을 열고 umuo를 「응용 프로그램」 폴더로 끌어 놓습니다.',
           '처음 열 때 차단되면 「시스템 설정 › 개인정보 보호 및 보안」에서 「그래도 열기」를 누릅니다.',

@@ -6,9 +6,9 @@ import type { SiteContent } from './types'
  */
 export const en: SiteContent = {
   seo: {
-    title: 'umuo: AI translator for Mac — read and write in any app',
+    title: 'umuo — Translate as you write on Mac',
     description:
-      'umuo translates in any app on your Mac: ⌃⌃ for selected text, ⌥⌘A for typed input, ⌥⌥ to replace what you typed in place, ⌥⌘O for screenshots. Use your own key (GPT, Claude, Gemini and more) or a local model. Completely free, no subscription, no account needed. Voice input is also available.',
+      'Free, open-source translation for Mac. Double-tap ⌥ to translate in place, or translate selected text, typed text, screenshots, and speech. Use your own API key or a local model. No account or subscription.',
     ogLocale: 'en_US',
   },
   nav: {
@@ -18,9 +18,9 @@ export const en: SiteContent = {
     themeToDark: 'Switch to dark theme',
   },
   hero: {
-    title: 'Translate right\nwhere you write',
+    title: 'Write here.\nTranslate here.',
     subtitle:
-      'Tap ⌥ twice and the text in your input box turns into another language, in place. Selections and screenshots translate too.',
+      'Tap ⌥ twice to translate in the same text box. Copy and paste can take a break. You can translate selections and screenshots, too.',
     demo: {
       label: 'Translation preview',
       modes: [
@@ -29,9 +29,9 @@ export const en: SiteContent = {
           hint: 'Tap ⌃ twice on this page to try it',
           name: 'Selection',
           keys: ['⌃', '⌃'],
-          before: '敏捷的棕色狐狸跳过了那只懒狗。',
+          before: '这会其实发封邮件就行。',
           beforeLang: 'zh-Hans',
-          after: 'The quick brown fox jumps over the lazy dog.',
+          after: 'That meeting could have been an email.',
           afterLang: 'en',
         },
         {
@@ -39,9 +39,9 @@ export const en: SiteContent = {
           hint: 'Tap ⌥ twice on this page to try it',
           name: 'Lightning Replace',
           keys: ['⌥', '⌥'],
-          before: 'Could we do the meeting at 3 tomorrow afternoon?',
+          before: 'Quick meeting at 3 tomorrow. Really.',
           beforeLang: 'en',
-          after: '明天下午三点开会可以吗？',
+          after: '明天下午三点开个短会，真的。',
           afterLang: 'zh-Hans',
           note: 'Replaced only if it is still the same input box. If anything fails, your original text stays.',
         },
@@ -60,9 +60,9 @@ export const en: SiteContent = {
           hint: 'Hold ⌃⌘V and speak, release to get it in your target language; hold ⌥⌘V to tidy it up in the same language',
           name: 'Voice',
           keys: ['⌃', '⌘', 'V'],
-          before: 'Um, so, can we move the meeting to Friday',
+          before: 'Um, coffee Friday… wait, Thursday?',
           beforeLang: 'en',
-          after: '会议可以改到周五吗？',
+          after: '周四喝杯咖啡？',
           afterLang: 'zh-Hans',
           note: 'Speech is transcribed on your Mac; first use downloads a voice model of about 560 MB.',
         },
@@ -74,7 +74,7 @@ export const en: SiteContent = {
       statusLabel: 'Preview',
       note: 'Not notarized yet. If macOS blocks it, open Privacy & Security and click “Open Anyway”.',
       afterDownload: {
-        title: 'Your download has started. Next:',
+        title: 'Download started. Let’s get umuo set up.',
         steps: [
           'Open the downloaded installer and drag umuo into your Applications folder.',
           'If macOS blocks it on first launch, open System Settings › Privacy & Security and click “Open Anyway”.',

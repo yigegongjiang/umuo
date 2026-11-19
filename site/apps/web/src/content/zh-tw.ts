@@ -6,9 +6,9 @@ import type { SiteContent } from './types'
  */
 export const zhTw: SiteContent = {
   seo: {
-    title: 'umuo — 讀與寫，一鍵翻譯 | Mac AI 翻譯軟體',
+    title: 'umuo — 寫完就地翻譯 | Mac AI 翻譯',
     description:
-      'umuo 是 macOS 上的 AI 翻譯軟體：⌃⌃ 劃詞翻譯、⌥⌘A 輸入翻譯、⌥⌥ 閃電替換、⌥⌘O 截圖翻譯。接上自己的金鑰（GPT、Claude、Gemini 等）或本機模型即可使用，完全免費，無訂閱、不需帳號。支援語音輸入。',
+      'umuo 是免費開源的 Mac 翻譯軟體。連按兩下 ⌥，譯文直接回到原本的輸入框。也能翻譯選取文字、手動輸入、截圖和語音。使用自己的 API 金鑰或本機模型，不需帳號或訂閱。',
     ogLocale: 'zh_TW',
   },
   nav: {
@@ -18,8 +18,8 @@ export const zhTw: SiteContent = {
     themeToDark: '切換為深色主題',
   },
   hero: {
-    title: '在哪裡寫，\n就在哪裡譯',
-    subtitle: '寫完按兩下 ⌥，輸入框裡的文字原地換成外語；劃詞、截圖也能譯。',
+    title: '寫完按兩下，\n原地換個語言',
+    subtitle: '連按兩下 ⌥，譯文直接回到輸入框，省下複製貼上。想看懂外文？選取文字，或截個圖。',
     demo: {
       label: '翻譯預覽',
       modes: [
@@ -28,9 +28,9 @@ export const zhTw: SiteContent = {
           hint: '在這個頁面連按兩下 ⌃ 試試',
           name: '劃詞翻譯',
           keys: ['⌃', '⌃'],
-          before: 'The quick brown fox jumps over the lazy dog.',
+          before: 'That meeting could have been an email.',
           beforeLang: 'en',
-          after: '敏捷的棕色狐狸跳過了那隻懶狗。',
+          after: '這場會議其實寄封信就好。',
           afterLang: 'zh-Hant',
         },
         {
@@ -38,9 +38,9 @@ export const zhTw: SiteContent = {
           hint: '在這個頁面連按兩下 ⌥ 試試',
           name: '閃電替換',
           keys: ['⌥', '⌥'],
-          before: '明天下午三點開會可以嗎？',
+          before: '明天下午三點開個短會，真的。',
           beforeLang: 'zh-Hant',
-          after: 'Does 3 p.m. tomorrow work for the meeting?',
+          after: 'Quick meeting at 3 tomorrow. Really.',
           afterLang: 'en',
           note: '確認仍是同一個輸入框才替換；失敗或取消時原文不動。',
         },
@@ -59,9 +59,9 @@ export const zhTw: SiteContent = {
           hint: '按住 ⌃⌘V 說話，放開後翻譯成目標語言；按住 ⌥⌘V 則整理成通順的同語言文字',
           name: '語音輸入',
           keys: ['⌃', '⌘', 'V'],
-          before: '嗯，那個，會議能改到禮拜五嗎',
+          before: '嗯，禮拜五……啊不對，禮拜四喝杯咖啡？',
           beforeLang: 'zh-Hant',
-          after: 'Could we move the meeting to Friday?',
+          after: 'Coffee on Thursday?',
           afterLang: 'en',
           note: '語音在本機轉寫，第一次使用會下載約 560 MB 的語音模型。',
         },
@@ -73,7 +73,7 @@ export const zhTw: SiteContent = {
       statusLabel: '預覽版',
       note: '預覽版未經 Apple 公證，首次打開若被攔下，到「隱私權與安全性」點「仍要打開」。',
       afterDownload: {
-        title: '下載已開始，接下來：',
+        title: '下載開始了，接下來安裝 umuo',
         steps: [
           '打開下載的安裝檔，把 umuo 拖進「應用程式」資料夾。',
           '首次打開若被攔下，到「系統設定 › 隱私權與安全性」點「仍要打開」。',

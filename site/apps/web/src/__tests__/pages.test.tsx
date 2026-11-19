@@ -151,7 +151,7 @@ describe('首页一屏', () => {
     expect(window.location.pathname).toBe('/')
     expect(document.documentElement.dataset.locale).toBe('ko')
     expect(document.cookie).toContain('umuo-lang=ko')
-    expect(host.querySelector('h1')?.textContent).toContain('번역')
+    expect(host.querySelector('h1')?.textContent).toContain('언어만 바꿔요')
     expect(host.querySelector('footer ul')).toBeNull()
     expect(host.querySelector('footer button[aria-expanded]')?.textContent).toContain('한국어')
   })

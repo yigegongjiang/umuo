@@ -6,9 +6,9 @@ import type { SiteContent } from './types'
  */
 export const zhCn: SiteContent = {
   seo: {
-    title: 'umuo — 读与写，一键翻译 | macOS AI 翻译',
+    title: 'umuo — 写完就地译 | Mac AI 翻译',
     description:
-      'umuo 是 macOS 上的 AI 翻译工具：⌃⌃ 划词翻译、⌥⌘A 输入翻译、⌥⌥ 闪电替换、⌥⌘O 截图翻译。接上自己的 Key（GPT、Claude、Gemini 等）或本地模型即可使用，完全免费，无订阅、无需账号。支持语音输入。',
+      'umuo 是免费的开源 Mac 翻译工具。连按两下 ⌥，译文回到原输入框。划词、输入、截图和语音也能译。使用自己的 API Key 或本地模型，无需账号或订阅。',
     ogLocale: 'zh_CN',
   },
   nav: {
@@ -18,8 +18,8 @@ export const zhCn: SiteContent = {
     themeToDark: '切换到深色主题',
   },
   hero: {
-    title: '在哪里写，\n就在哪里译',
-    subtitle: '写完按两下 ⌥，输入框里的文字原地换成外语；划词、截图也能译。',
+    title: '写完按两下，\n原地换个语言',
+    subtitle: '连按两下 ⌥，译文直接回到输入框，省去复制粘贴。想读外文？划个词，或截个图。',
     demo: {
       label: '翻译预览',
       modes: [
@@ -28,9 +28,9 @@ export const zhCn: SiteContent = {
           hint: '在这个页面连按两下 ⌃ 试试',
           name: '划词翻译',
           keys: ['⌃', '⌃'],
-          before: 'The quick brown fox jumps over the lazy dog.',
+          before: 'That meeting could have been an email.',
           beforeLang: 'en',
-          after: '敏捷的棕色狐狸跳过了那只懒狗。',
+          after: '这会其实发封邮件就行。',
           afterLang: 'zh-Hans',
         },
         {
@@ -38,9 +38,9 @@ export const zhCn: SiteContent = {
           hint: '在这个页面连按两下 ⌥ 试试',
           name: '闪电替换',
           keys: ['⌥', '⌥'],
-          before: '明天下午三点开会可以吗？',
+          before: '明天下午三点开个短会，真的。',
           beforeLang: 'zh-Hans',
-          after: 'Does 3 p.m. tomorrow work for the meeting?',
+          after: 'Quick meeting at 3 tomorrow. Really.',
           afterLang: 'en',
           note: '确认还是同一个输入框才替换；失败或取消时原文不动。',
         },
@@ -59,9 +59,9 @@ export const zhCn: SiteContent = {
           hint: '按住 ⌃⌘V 说话，松开后翻译成目标语言；按住 ⌥⌘V 则整理成通顺的同语言文字',
           name: '语音输入',
           keys: ['⌃', '⌘', 'V'],
-          before: '嗯，那个，会议能改到周五吗',
+          before: '嗯，周五……不对，周四喝杯咖啡？',
           beforeLang: 'zh-Hans',
-          after: 'Could we move the meeting to Friday?',
+          after: 'Coffee on Thursday?',
           afterLang: 'en',
           note: '语音在本机转写，首次使用会下载约 560 MB 的语音模型。',
         },
@@ -73,7 +73,7 @@ export const zhCn: SiteContent = {
       statusLabel: '预览版',
       note: '预览版未经 Apple 公证，首次打开如被拦截，到「隐私与安全性」点「仍要打开」。',
       afterDownload: {
-        title: '下载已开始，接下来：',
+        title: '下载开始了，接下来装上 umuo',
         steps: [
           '打开下载的安装包，把 umuo 拖进「应用程序」文件夹。',
           '首次打开如被拦截，到「系统设置 › 隐私与安全性」点「仍要打开」。',
