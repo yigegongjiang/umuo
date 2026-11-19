@@ -102,6 +102,11 @@ bun run dev:macos    # Rust バインディングと SwiftUI クライアント�
 初回利用時にはマイクへのアクセス許可を求められ、Hugging Face から約 560 MB の文字起こしモデルをダウンロードします。入力欄への書き戻しにもアクセシビリティの許可が必要です。
 どちらのキーも **設定 → 翻訳 → 音声入力** で変更できます。
 
+### PopClip
+
+[PopClip](https://www.popclip.app/)（2024.12 以降）を使っている場合は、`open scripts/popclip/umuo.popclipext` で拡張機能をインストールできます。
+あとはテキストを選択して PopClip バーの umuo アイコンをクリックすると、同じくマウスカーソルの近くのパネルに訳文が表示されます。拡張機能は `umuo://translate?text=…` で umuo を呼び出します。umuo はこのリンクを PopClip からのみ受け付けます。
+
 ## リポジトリ構成
 
 ```
@@ -117,7 +122,7 @@ crates/umuo-app/     共有アプリロジック：設定、翻訳パイプラ�
 crates/umuo-core/    プラットフォーム非依存の翻訳カーネル：Provider、Prompt、ストリーミング解析、計量
 crates/umuo-store/   ローカル SQLite：履歴（旧お気に入りと使用量テーブルはデータのみ保持）
 site/               公式サイトと Worker、独立した Bun プロジェクト
-scripts/            アイコン生成、サードパーティライセンスの確認、ネイティブリリース用ツール
+scripts/            アイコン生成、サードパーティライセンスの確認、ネイティブリリース用ツール、PopClip 拡張機能
 docs/              PRD、アーキテクチャ、リリース、実機ウォークスルー、受け入れチェックリスト
 ```
 

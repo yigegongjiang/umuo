@@ -100,6 +100,11 @@ In any text field, hold **⌥⌘V** and speak; when you release, your words are 
 The first use asks for microphone permission and downloads a transcription model of about 560 MB from Hugging Face; writing back into the text field also needs Accessibility permission.
 Both shortcuts can be changed under **Settings → Translation → Voice Input**.
 
+### PopClip
+
+With [PopClip](https://www.popclip.app/) 2024.12 or later installed, run `open scripts/popclip/umuo.popclipext` to install the extension.
+Then select text and click the umuo icon in the PopClip bar: the translation appears in the same floating panel next to your pointer. The extension opens `umuo://translate?text=…`; umuo accepts this link only from PopClip.
+
 ## Repository layout
 
 ```
@@ -115,7 +120,7 @@ crates/umuo-app/     Shared app logic: settings, translation pipeline, voice ses
 crates/umuo-core/    Platform-independent translation core: providers, prompts, stream parsing, metering
 crates/umuo-store/   Local SQLite: history (legacy favorites and usage tables kept for data only)
 site/               Website and Worker, a standalone Bun project
-scripts/            Icon generation, third-party license checks and native release tooling
+scripts/            Icon generation, third-party license checks, native release tooling and the PopClip extension
 docs/              PRD, architecture, releases, on-device walkthrough and acceptance checklists
 ```
 

@@ -71,6 +71,23 @@ extension PanelController {
                                           focusSource: nil))
     }
 
+    /// 外部链接入口（`umuo://translate`，PopClip 扩展）：文本由调用方给出，不取词。
+    /// 浮窗像划词一样弹在鼠标旁，归属取当时的前台应用（切走即收起、撰写窗可粘回）；没有可写回的选区。
+    func translateExternal(_ text: String) {
+        guard let engine = app.engine else { return showNotice(app.engineStatus, permission: nil) }
+        triggers.invalidate()
+        showNearCursor()
+        startAwaitingStart(TranslateRequest(text: text, mode: .selection, targetOverride: nil, sourceOverride: nil,
+                                            focusSource: nil), engine: engine)
+    }
+
+    /// 先登记请求并记为等待 Start，再交给流水线：Start 到达前按 Esc 或 ✕，取消的是这次请求，而不只是收起浮窗。
+    func startAwaitingStart(_ request: TranslateRequest, engine: Engine) {
+        let id = engine.beginRequest(surface: Self.surface)
+        session.pendingStart = id
+        startTranslation(request, ticketId: id)
+    }
+
     /// 系统框选后在本机识别，结果交给 OCR 翻译流水线。
     ///
     /// 框选进行中再次触发直接忽略（返回 nil）：否则会再起一个框选，两次结果各自开始翻译、后到的覆盖先到的。
