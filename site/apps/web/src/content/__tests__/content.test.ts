@@ -179,11 +179,14 @@ describe('官网内容完整性', () => {
     }
   })
 
-  it('开发中的演示模式显示标签，不再写选项卡上不显示的键位', () => {
+  it('五种语言的语音演示显示正式快捷键', () => {
     for (const locale of LOCALES) {
-      for (const mode of getContent(locale).hero.demo.modes) {
-        expect(Boolean(mode.tag) !== Boolean(mode.keys), `${locale}/${mode.id}`).toBe(true)
-      }
+      const voice = getContent(locale).hero.demo.modes.find((mode) => mode.id === 'speak')
+      expect(voice?.keys, locale).toEqual(['⌃', '⌘', 'V'])
+      expect(voice?.note, locale).toMatch(/560/)
+      expect(getContent(locale).seo.description, locale).not.toMatch(
+        /experimental|实验|實驗|試験|실험/i,
+      )
     }
   })
 })

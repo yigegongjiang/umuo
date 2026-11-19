@@ -46,7 +46,7 @@ umuo 完全免费、以 MIT 许可证开源，纯 BYOK：用户自带模型 Key�
 
 ## 开发文档
 
-真机验收待完成。语音输入为实验性功能。
+真机验收待完成。
 
 - [产品需求](docs/PRD.md)
 - [客户端架构](docs/ARCHITECTURE.md)

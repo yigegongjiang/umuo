@@ -328,6 +328,22 @@
     transform: scale(0.92);
   }
 
+  .language-picker {
+    display: none;
+    align-items: center;
+  }
+
+  .language-picker select {
+    appearance: none;
+    min-height: 44px;
+    padding-inline: 2rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-control);
+    background: var(--paper-elevated);
+    color: var(--ink);
+    font-size: 1rem;
+  }
+
   /* —— 语言菜单：从触发按钮那一侧长出来；箭头跟着展开状态转向 —— */
   .lang-chevron {
     transition: transform var(--dur-base) var(--ease-out);
@@ -864,21 +880,6 @@
     }
   }
 
-  /* 版本标记：咖啡色小方角标签，不做胶囊 */
-  .tag {
-    display: inline-block;
-    padding: 0.0625rem 0.375rem;
-    border: 1px solid color-mix(in srgb, var(--coffee) 45%, var(--rule-strong));
-    border-radius: 4px;
-    background: var(--coffee-soft);
-    font-size: 0.75rem;
-    font-weight: 500;
-    line-height: 1.4;
-    /* 深色主题下 coffee-strong 在深底上不足 4.5:1，用提亮过的强调色 */
-    color: var(--accent-strong);
-    white-space: nowrap;
-  }
-
   /* 韩文整页按词换行，日文按词组换行（auto-phrase 不支持的浏览器照常断行），都不从词中间断开 */
   :lang(ko) {
     word-break: keep-all;
@@ -909,11 +910,6 @@
     }
     .demo-tab-name {
       white-space: normal;
-    }
-    /* 「开发中」标签收一号，放不下时折到名称下面 */
-    .demo-tabs .tag {
-      padding-inline: 0.25rem;
-      font-size: 0.6875rem;
     }
   }
 
@@ -987,6 +983,12 @@
   /* —— 手机（触屏）：文字、下载、演示自上而下排成一列，可以滚动，背景字符网格与桌面相同 ——
      放在窄屏规则之后，覆盖它们的字号与间距。桌面（含窄而矮的窗口）不受影响。 */
   @media (hover: none) and (pointer: coarse) {
+    .language-menu-desktop {
+      display: none;
+    }
+    .language-picker {
+      display: inline-flex;
+    }
     .site-nav svg {
       box-shadow: none;
     }

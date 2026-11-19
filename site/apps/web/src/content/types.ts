@@ -48,10 +48,8 @@ export interface DemoMode {
   id: DemoModeId
   /** 切换按钮上的功能名 */
   name: string
-  /** 状态标记，例如「开发中」；已发布的功能留空 */
-  tag?: string
-  /** 触发键位，键帽逐个渲染；有 tag（如开发中）的模式选项卡上显示标签而不是键位，可以不写 */
-  keys?: string[]
+  /** 触发键位，键帽逐个渲染 */
+  keys: string[]
   /** 结果下方的一行补充，例如闪电替换的安全边界 */
   note?: string
   /** 演示底部的提示：怎样在这个页面上亲手试（触屏设备上隐藏） */
