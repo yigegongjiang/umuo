@@ -28,6 +28,12 @@ struct TranslatePage: View {
                           title: t("prefs.voice.tidy"))
                 HotkeyRow(model: model, field: HotkeyCenter.voiceTranslateField,
                           description: t("prefs.voice.translateHint"), title: t("prefs.voice.translate"))
+                PrefRow(title: t("prefs.voice.microphone"), description: t("prefs.voice.microphoneHint")) {
+                    PrefPicker(label: t("prefs.voice.microphone"), value: s.string("voiceInputDevice"),
+                               options: microphoneOptions) {
+                        model.commit(["voiceInputDevice": .string($0)])
+                    }
+                }
             }
 
             PrefGroup(title: t("prefs.translate.engine")) {
@@ -39,6 +45,18 @@ struct TranslatePage: View {
 
             LanguageRules(model: model)
         }
+    }
+
+    /// 「跟随系统」+ 当前连着的麦克风；选过但现在没连的那个也列出来，免得选择框显示空白。
+    // shortcut: 列表在页面渲染时读一次，插拔耳机后要重开设置页才刷新；需要时再监听设备变更通知。
+    private var microphoneOptions: [(String, String)] {
+        let devices = Microphones.list()
+        let saved = s.string("voiceInputDevice")
+        var options = [("", t("prefs.followSystem"))] + devices.map { ($0.uid, $0.name) }
+        if !saved.isEmpty, !devices.contains(where: { $0.uid == saved }) {
+            options.append((saved, t("prefs.voice.microphoneMissing")))
+        }
+        return options
     }
 
     private var engineLine: String {

@@ -28,7 +28,8 @@ enum MicrophoneAccess {
 
 /// 正式的录音器：`AVAudioEngine` 的输入节点（系统当前的默认输入设备）→ 转成 16 kHz 单声道 Float32 → 追加写进临时文件。
 ///
-/// - 设备：跟随系统的默认输入设备；没有输入设备（格式采样率为 0）报 `noInputDevice`。
+/// - 设备：设置里选了麦克风（`inputDevice` 返回 UID）就用它，没选或它不在就跟随系统默认输入；
+///   没有输入设备（格式采样率为 0）报 `noInputDevice`。
 /// - 配置变更：蓝牙耳机一开麦就会从听歌切到通话模式，输入格式随之改变，引擎发通知并停下。
 ///   这时按新格式重新接上、继续写同一个文件；重新接不上（设备拔了、格式为 0）才按 `noInputDevice` 回报。
 /// - 只在主线程上开关；采样在音频线程上转换并写盘（`Writer` 自己加锁）。
@@ -48,9 +49,13 @@ final class SystemVoiceRecorder: VoiceRecording {
     private var latest: UInt64?
     /// 申请麦克风权限（测试换成自己控制何时放行的假授权，不弹系统对话框）。
     private let authorize: @MainActor () async -> Bool
+    /// 设置里选的麦克风 UID，空串 = 系统默认。每次开麦现读，改了设置下一句就生效。
+    private let inputDevice: @MainActor () -> String
 
-    init(authorize: @escaping @MainActor () async -> Bool = { await MicrophoneAccess.ensure() }) {
+    init(authorize: @escaping @MainActor () async -> Bool = { await MicrophoneAccess.ensure() },
+         inputDevice: @escaping @MainActor () -> String = { "" }) {
         self.authorize = authorize
+        self.inputDevice = inputDevice
     }
 
     func start(session: UInt64, output: FileHandle) async throws {
@@ -68,8 +73,9 @@ final class SystemVoiceRecorder: VoiceRecording {
 
         let engine = AVAudioEngine()
         let writer = Writer(output: output)
+        let device = inputDevice()
         do {
-            try Self.attach(engine, writer)
+            try Self.attach(engine, writer, device: device)
         } catch {
             writer.finish()
             throw error
@@ -82,7 +88,7 @@ final class SystemVoiceRecorder: VoiceRecording {
                 engine.inputNode.removeTap(onBus: 0)
                 engine.stop()
                 do {
-                    try Self.attach(engine, writer)
+                    try Self.attach(engine, writer, device: device)
                 } catch {
                     self.teardown(active)
                     self.onFailure?(session, error as? VoiceFault
@@ -94,7 +100,8 @@ final class SystemVoiceRecorder: VoiceRecording {
     }
 
     /// 按输入节点当前的格式装 tap、换转换器、启动引擎。首次开麦与配置变更后重接共用。
-    private static func attach(_ engine: AVAudioEngine, _ writer: Writer) throws {
+    private static func attach(_ engine: AVAudioEngine, _ writer: Writer, device: String) throws {
+        Microphones.select(device, on: engine)
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else {

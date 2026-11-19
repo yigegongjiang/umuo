@@ -110,6 +110,14 @@ final class AppModel {
         }
     }
 
+    /// 设置里选的麦克风 UID；没读到设置或没选时为空串（系统默认）。
+    nonisolated static func voiceInputDevice(settingsJson: String?) -> String {
+        guard let data = settingsJson?.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return "" }
+        return object["voiceInputDevice"] as? String ?? ""
+    }
+
     /// 语音的宿主装配：录音器、本地转写、模型清单都在这里接上，快捷键在 Engine 打开后随其它快捷键一起注册。
     /// 不下载、不加载任何东西：模型只在用户第一次按语音键、在浮层里点「下载」时才下（PRD §7.4）。
     private func startVoice() {
@@ -122,7 +130,9 @@ final class AppModel {
         let models = VoiceModelStore(spec: spec, fetcher: URLSessionModelFetcher())
         let transcriber = LocalTranscriber(modelPath: info.path, idleUnload: TimeInterval(info.idleUnloadSecs))
         let controller = VoiceController(
-            recorder: SystemVoiceRecorder(), transcriber: transcriber, models: models, files: files,
+            recorder: SystemVoiceRecorder(inputDevice: { [weak self] in
+                AppModel.voiceInputDevice(settingsJson: self?.engine?.settingsJson())
+            }), transcriber: transcriber, models: models, files: files,
             maxRecordingMs: info.maxRecordingMs,
             copyText: { text in await Task.detached { Pasteboard.copy(text) }.value?.key }
         )

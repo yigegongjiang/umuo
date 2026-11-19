@@ -103,6 +103,9 @@ pub struct Settings {
     pub voice_hotkey: String,
     /// 语音翻译「按住说话」（翻译到目标语言）的全局快捷键，默认 ⌃⌘V。规则同 [`Self::voice_hotkey`]。
     pub voice_translate_hotkey: String,
+    /// 语音录音用的麦克风：CoreAudio 设备 UID，空 = 跟随系统默认输入。
+    /// 选中的设备不在时（耳机没连）宿主退回系统默认，不报错。
+    pub voice_input_device: String,
     /// 自定义 OpenAI 兼容端点的 Base URL（PRD §6.1最后一行）。只在选「自定义端点」时用。
     pub custom_base_url: String,
     /// 逐供应商的 Base URL 覆盖。
@@ -201,6 +204,7 @@ impl Default for Settings {
             speak_hotkey: "Alt+R".to_string(),
             voice_hotkey: "Alt+Cmd+V".to_string(),
             voice_translate_hotkey: "Ctrl+Cmd+V".to_string(),
+            voice_input_device: String::new(),
             custom_base_url: String::new(),
             provider_base_urls: std::collections::BTreeMap::new(),
             selection_blacklist: default_selection_blacklist(),

@@ -520,6 +520,25 @@ mod tests {
     }
 
     #[test]
+    fn voice_input_device_defaults_to_system_and_saves_without_reregistering() {
+        let core = open_in("voice-device", &json!({ "futureField": 1 }));
+        let (settings, _) = core
+            .apply_settings_patch(json!({ "theme": "dark" }))
+            .unwrap();
+        assert_eq!(
+            settings.voice_input_device, "",
+            "旧配置没有这一项：跟随系统"
+        );
+        let (settings, effects) = core
+            .apply_settings_patch(json!({ "voiceInputDevice": "BuiltInMicrophoneDevice" }))
+            .unwrap();
+        assert_eq!(settings.voice_input_device, "BuiltInMicrophoneDevice");
+        assert!(!effects.hotkeys);
+        let saved: serde_json::Value = serde_json::from_slice(&file_bytes(&core)).unwrap();
+        assert_eq!(saved["voiceInputDevice"], "BuiltInMicrophoneDevice");
+    }
+
+    #[test]
     fn retired_hotkeys_and_statistics_survive_without_registration_effects() {
         let core = open_in(
             "retired",
