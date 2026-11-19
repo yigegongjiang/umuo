@@ -5,9 +5,9 @@ import Carbon
 /// 封装 macOS Accessibility：全是线程安全的 C API，工作线程上直接调。
 enum AX {
     /// 当前聚焦的 UI 元素（系统级 `AXFocusedUIElement`）。没有权限、没有焦点时为 nil。
-    static func focusedElement() -> AXUIElement? {
+    static func focusedElement(in application: AXUIElement = AXUIElementCreateSystemWide()) -> AXUIElement? {
         var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(AXUIElementCreateSystemWide(),
+        guard AXUIElementCopyAttributeValue(application,
                                             kAXFocusedUIElementAttribute as CFString, &value) == .success,
               let value, CFGetTypeID(value) == AXUIElementGetTypeID()
         else { return nil }

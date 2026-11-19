@@ -16,7 +16,7 @@ import UmuoCore
 /// - 切应用、同应用换框、只读、安全输入、目标退出或无法核验：不写，浮层保留结果并说明原因。
 @MainActor
 protocol VoiceDelivering: AnyObject {
-    /// 录音开始：在处理按键时记下来源，避免后台任务把后来切入的输入框认作目标。
+    /// 按键时记下来源应用，后台尽快捕获该应用的输入框。
     func capture(session: UInt64)
     /// 核验录音开始时的目标并写入。nil = 写进去了；否则是拒绝原因（没有写任何东西）。
     func deliver(session: UInt64, text: String) async -> VoiceDeliveryRefusal?
@@ -91,10 +91,10 @@ enum VoiceDeliveryRules {
     }
 }
 
-/// 交付要的系统能力（正式实现 `AXFocusProbe`，测试使用假对象）。按键处理时捕获，其余检查与写入在后台执行。
+/// 交付要的系统能力（正式实现 `AXFocusProbe`，测试使用假对象）。AX 捕获、核验与写入均在后台执行。
 protocol VoiceFocusProbing: Sendable {
     /// 录音开始时的目标。
-    func capture() -> VoiceTarget
+    func capture(pid: pid_t?) -> VoiceTarget
     /// 交付前现查。
     func check(_ target: VoiceTarget) -> VoiceDeliveryCheck
     /// 经 AX 把文本写进 `element` 的选区 / 光标处。返回是否成功。
@@ -106,24 +106,25 @@ protocol VoiceFocusProbing: Sendable {
 
 /// 正式实现：Accessibility + `NSRunningApplication` + `AX.isSecureInput`。线程安全的 C API，后台直接调。
 struct AXFocusProbe: VoiceFocusProbing {
-    func capture() -> VoiceTarget {
-        guard AXIsProcessTrusted() else { return VoiceTarget(pid: frontmostPid(), element: nil, window: nil) }
-        let element = AX.focusedElement()
-        var pid: pid_t = 0
-        let elementPid = element.flatMap { AXUIElementGetPid($0, &pid) == .success && pid > 0 ? pid : nil }
-        guard let element, let elementPid, elementPid == frontmostPid(), !AX.isSecureInput(element) else {
-            return VoiceTarget(pid: nil, element: nil, window: nil)
+    func capture(pid: pid_t?) -> VoiceTarget {
+        let unknown = VoiceTarget(pid: nil, element: nil, window: nil)
+        guard let pid, AXIsProcessTrusted() else { return unknown }
+        let app = AXUIElementCreateApplication(pid)
+        guard AXUIElementSetMessagingTimeout(app, 0.25) == .success,
+              let element = AX.focusedElement(in: app),
+              AXUIElementSetMessagingTimeout(element, 0.25) == .success else { return unknown }
+        defer {
+            AXUIElementSetMessagingTimeout(element, 0)
         }
-        // 这里跑在主线程：目标应用卡住时后续查询最多等 0.25 s，不按默认 6 s 卡住按键处理
-        // shortcut: 取焦点元素那一次仍是系统默认超时，真遇到卡顿再给系统级元素单独设
-        AXUIElementSetMessagingTimeout(element, 0.25)
-        // 元素随目标交给后台核验与写入，那时恢复系统默认超时
-        defer { AXUIElementSetMessagingTimeout(element, 0) }
+        var elementPid: pid_t = 0
+        guard AXUIElementGetPid(element, &elementPid) == .success, elementPid == pid, !AX.isSecureInput(element) else {
+            return unknown
+        }
         let range = AX.selectedRange(element)
         let text = AX.string(element, kAXValueAttribute as CFString)
-        let confirmed = AX.focusedElement().map { CFEqual($0, element) } == true
+        let confirmed = AX.focusedElement(in: app).map { CFEqual($0, element) } == true
             && Self.sameRange(range, AX.selectedRange(element))
-        return VoiceTarget(pid: elementPid, element: confirmed ? element : nil, window: Self.window(element),
+        return VoiceTarget(pid: pid, element: confirmed ? element : nil, window: Self.window(element),
                            text: text, range: range)
     }
 
@@ -189,7 +190,7 @@ final class FocusedFieldDelivery: VoiceDelivering {
     private let probe: VoiceFocusProbing
     private let paster: ControlledPaste
     /// 只留当前会话的目标：新会话开始时旧的随之丢掉。
-    private var targets: [UInt64: VoiceTarget] = [:]
+    private var targets: [UInt64: Task<VoiceTarget?, Never>] = [:]
     /// 在途交付持有自己的取消标记，结束后释放。
     private var deliveries: [UInt64: OSAllocatedUnfairLock<Bool>] = [:]
 
@@ -199,15 +200,25 @@ final class FocusedFieldDelivery: VoiceDelivering {
     }
 
     func capture(session: UInt64) {
-        targets = [session: probe.capture()]
+        for task in targets.values { task.cancel() }
+        let probe = probe
+        let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        let deadline = ContinuousClock.now + .milliseconds(250)
+        targets = [session: Task.detached(priority: .userInitiated) {
+            guard !Task.isCancelled, ContinuousClock.now < deadline else { return nil }
+            let target = probe.capture(pid: pid)
+            guard !Task.isCancelled, ContinuousClock.now < deadline else { return nil }
+            return target
+        }]
     }
 
     func deliver(session: UInt64, text: String) async -> VoiceDeliveryRefusal? {
-        guard let target = targets.removeValue(forKey: session) else { return .unverifiable }
+        guard let capture = targets.removeValue(forKey: session) else { return .unverifiable }
         let probe = probe, paster = paster
         let cancelled = OSAllocatedUnfairLock(initialState: false)
         deliveries[session] = cancelled
         defer { deliveries[session] = nil }
+        guard let target = await capture.value else { return .unverifiable }
         return await Task.detached(priority: .userInitiated) {
             Self.perform(text, target: target, probe: probe, paster: paster) {
                 cancelled.withLock { $0 }
@@ -216,7 +227,7 @@ final class FocusedFieldDelivery: VoiceDelivering {
     }
 
     func cancel(session: UInt64) {
-        targets[session] = nil
+        targets.removeValue(forKey: session)?.cancel()
         deliveries[session]?.withLock { $0 = true }
     }
 

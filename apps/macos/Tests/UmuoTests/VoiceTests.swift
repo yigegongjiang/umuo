@@ -395,6 +395,19 @@ struct VoiceControllerTests {
         #expect(rig.files.leftovers() == 0)
     }
 
+    @Test func 迟到的开麦回调不重置当前录音时间() async {
+        let rig = Rig()
+        rig.controller.press()
+        await until { rig.phase == .recording }
+        rig.controller.cancel()
+        rig.controller.press()
+        await until { rig.phase == .recording && rig.session == 2 }
+        let started = rig.controller.overlay.recordingSince
+        rig.controller.feed(.recordingStarted(session: 1))
+        #expect(started != nil)
+        #expect(rig.controller.overlay.recordingSince == started)
+    }
+
     @Test func 按住期间重复按下_不开新会话() async {
         let rig = Rig()
         rig.controller.press()

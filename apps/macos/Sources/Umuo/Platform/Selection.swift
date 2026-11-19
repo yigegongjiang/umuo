@@ -12,11 +12,11 @@ struct FocusText: Equatable {
 }
 
 /// 取词失败。给用户看的话是文案键（`text`），由浮窗按界面语言取成句子。
-/// 黑名单不在这里查：那是 Rust 的 `Engine.selectionBlockNotice`，取词之前由调用方（`PanelTriggers`）问过。
 enum SelectionError: UserFacingError, Equatable {
     /// 没有辅助功能权限。单独一个分支：UI 要据此把用户引到系统设置（PRD §7.4）。
     case permissionDenied
     case noSelection
+    case blocked(String)
     /// 可写性检查拒绝（文案来自 `AXWriteBack.checkWritable`）。
     case notWritable(UserText)
     case other(UserText)
@@ -25,6 +25,7 @@ enum SelectionError: UserFacingError, Equatable {
         switch self {
         case .permissionDenied: UserText("error.accessibilityRequired")
         case .noSelection: UserText("error.noSelection")
+        case let .blocked(message): UserText(message)
         case let .notWritable(text), let .other(text): text
         }
     }
@@ -39,13 +40,15 @@ enum Selection {
     /// Electron / Java / 远程桌面里的 App 常常走降级。
     static func readSelection() throws(SelectionError) -> String { try readPanelSelection().text }
 
-    static func readPanelSelection() throws(SelectionError) -> FocusText {
+    static func readPanelSelection(
+        blockNotice: (String) throws(SelectionError) -> String? = { _ in nil }
+    ) throws(SelectionError) -> FocusText {
         guard AXIsProcessTrusted() else { throw .permissionDenied }
         let probe = AXTextProbe()
         let element = probe.focusedElement()
+        let owner = try checkedOwner(of: element, blockNotice: blockNotice)
         if probe.secureInput(element) { throw .other(UserText("error.secureInput")) }
         let target = probe.targetToken(element, requiresRange: true)
-        let owner = FrontmostApp.liveToken()
         if let text = element.flatMap({ AX.string($0, kAXSelectedTextAttribute as CFString) }),
            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
@@ -53,22 +56,30 @@ enum Selection {
             return FocusText(text: text, source: .selection, writeTarget: confirmed ? target : nil, owner: owner)
         }
         // 无法证明选区身份时仍可翻译，但该结果没有写回目标。
-        return FocusText(text: try ClipboardFallback().read(), source: .selection, owner: owner)
+        guard let pid = pid_t(owner) else { throw .other(UserText("error.targetChanged")) }
+        let fallback = ClipboardFallback(copy: { () throws(SelectionError) in try KeyEvent.copy(to: pid) })
+        let text = try fallback.read { () throws(SelectionError) in
+            guard FrontmostApp.liveToken() == owner else { throw .other(UserText("error.targetChanged")) }
+            if AX.isSecureInput(AX.focusedElement()) { throw .other(UserText("error.secureInput")) }
+        }
+        return FocusText(text: text, source: .selection, owner: owner)
     }
 
     /// 读取「该被翻译的文本」：优先选区，没有选区时读整个可编辑区域（PRD §5.4）。
     ///
     /// **不做剪贴板降级**：静默翻译紧接着要经同一条 AX 通道写回，这条通道不通的话，
     /// 降级取词也救不回来，只会白白动一次用户的剪贴板。
-    static func readFocusText() throws(SelectionError) -> FocusText {
+    static func readFocusText(
+        blockNotice: (String) throws(SelectionError) -> String? = { _ in nil }
+    ) throws(SelectionError) -> FocusText {
         guard AXIsProcessTrusted() else { throw .permissionDenied }
         let element = AX.focusedElement()
+        let owner = try checkedOwner(of: element, blockNotice: blockNotice)
         // 密码框一个字都不读：读出来的可能是掩码，发给供应商之后还会被写回、覆盖密码。
         if AX.isSecureInput(element) { throw .other(UserText("error.secureInput")) }
 
         let probe = AXTextProbe()
         let target = probe.targetToken(element)
-        let owner = FrontmostApp.liveToken()
 
         // 选中了什么就翻什么。写不回去的话先说清楚，免得白翻一遍。
         if let text = element.flatMap({ AX.string($0, kAXSelectedTextAttribute as CFString) }),
@@ -91,6 +102,20 @@ enum Selection {
             throw .other(UserText("error.targetChanged"))
         }
         return FocusText(text: text, source: .wholeField, writeTarget: target, owner: owner)
+    }
+
+    /// 用即将读取的 AX 元素核对来源。没有元素时，复制降级只发给这次核准的进程。
+    private static func checkedOwner(of element: AXUIElement?,
+                                     blockNotice: (String) throws(SelectionError) -> String?) throws(SelectionError) -> String {
+        guard let owner = FrontmostApp.liveToken() else { throw .other(UserText("error.targetChanged")) }
+        if let element {
+            var pid: pid_t = 0
+            guard AXUIElementGetPid(element, &pid) == .success, String(pid) == owner else {
+                throw .other(UserText("error.targetChanged"))
+            }
+        }
+        if let message = try blockNotice(owner) { throw .blocked(message) }
+        return owner
     }
 
     private static func checkWritable(_ source: FocusSource, _ element: AXUIElement?) throws(SelectionError) {
@@ -116,7 +141,7 @@ struct ClipboardFallback {
     /// 轮询等待可注入：测试不依赖线程调度或真实用户输入。
     var wait: (TimeInterval) -> Void = { Thread.sleep(forTimeInterval: $0) }
 
-    func read() throws(SelectionError) -> String {
+    func read(validateSource: () throws(SelectionError) -> Void = {}) throws(SelectionError) -> String {
         Pasteboard.exclusive.lock()
         defer { Pasteboard.exclusive.unlock() }
         // 不能观察用户操作时不借用剪贴板；否则恢复旧快照可能覆盖用户的新复制。
@@ -126,6 +151,7 @@ struct ClipboardFallback {
         guard let snapshot = Pasteboard.Snapshot.take(pasteboard) else {
             throw .other(UserText(pasteboard.changeCount == original ? Pasteboard.tooLarge : Pasteboard.changed))
         }
+        try validateSource()
         guard !watcher.wasInterrupted(), pasteboard.changeCount == original else {
             throw .other(UserText(Pasteboard.changed))
         }
@@ -154,6 +180,8 @@ struct ClipboardFallback {
             // 应用通常先 clearContents 再写数据：计数变了但文本尚未就位时继续等，
             // 不能在两步之间恢复快照、打断它正在写入的复制。
             if let text = Self.copiedText(cleared: cleared, now: count, text: text) {
+                try validateSource()
+                guard !watcher.wasInterrupted(), pasteboard.changeCount == count else { throw interrupted() }
                 snapshot.restore(pasteboard)
                 return text
             }

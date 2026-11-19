@@ -183,6 +183,35 @@ struct ComposeSessionTests {
         #expect(backend.translated.map(\.text) == ["第一版", "第二版"])
     }
 
+    @Test(arguments: [false, true])
+    func 清空输入或停用自动翻译_丢弃已排队的自动请求(disable: Bool) async {
+        let (session, backend) = session()
+        session.input = "第一版"
+        await until { backend.translated.count == 1 }
+        session.input = "第二版"
+        await until { session.queue.pending == "第二版" }
+        if disable { session.autoTranslate = false } else { session.input = "" }
+        session.apply(route: route(1), event: errorEvent("网络错误"))
+        #expect(backend.translated.map(\.text) == ["第一版"])
+    }
+
+    @Test func 有截断警告时不粘回_仍能复制() async {
+        let (session, backend) = session()
+        session.input = "你好"
+        await until { backend.translated.count == 1 }
+        session.apply(route: route(1), event: start("你好"))
+        session.apply(route: route(1), event: .delta(text: "Hel"))
+        session.apply(route: route(1), event: .done(warning: "译文可能不完整", model: "mock",
+                      inputTokens: 1, outputTokens: 1, estimated: false,
+                      firstTokenMs: nil, totalMs: 10, replaced: false))
+        session.commit(paste: true)
+        await settle()
+        #expect(backend.commits.isEmpty)
+        session.commit(paste: false)
+        await until { backend.commits.count == 1 }
+        #expect(backend.commits.map(\.paste) == [false])
+    }
+
     @Test func 关掉自动翻译时输入不发_再打开就按当前输入发() async {
         let (session, backend) = session()
         session.autoTranslate = false

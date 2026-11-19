@@ -160,7 +160,7 @@ final class VoiceController {
         case .transcribed, .transcriptionFailed, .cancel, .press: overlay.preparingEngine = false
         default: break
         }
-        if case .recordingStarted = input, case .recording = step.phase {
+        if case let .recordingStarted(session) = input, session == step.session, case .recording = step.phase {
             overlay.recordingSince = Date()
             armLimit(step.session)
         }

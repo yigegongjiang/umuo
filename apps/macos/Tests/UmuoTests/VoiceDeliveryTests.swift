@@ -14,7 +14,7 @@ private final class FakeProbe: VoiceFocusProbing, @unchecked Sendable {
     private var _check = VoiceDeliveryCheck()
     private var _inserted: [String] = []
     private var _targets: [AXUIElement] = []
-    private var _captures = 0
+    private var _captureWasOnMainThread: Bool?
     var insertSucceeds = true
     var frontmost: pid_t? = 42
 
@@ -26,10 +26,10 @@ private final class FakeProbe: VoiceFocusProbing, @unchecked Sendable {
     var inserted: [String] { lock.withLock { _inserted } }
     /// 每次 AX 写入写的是哪个元素。
     var insertedInto: [AXUIElement] { lock.withLock { _targets } }
-    var captures: Int { lock.withLock { _captures } }
+    var captureWasOnMainThread: Bool? { lock.withLock { _captureWasOnMainThread } }
 
-    func capture() -> VoiceTarget {
-        lock.withLock { _captures += 1 }
+    func capture(pid: pid_t?) -> VoiceTarget {
+        lock.withLock { _captureWasOnMainThread = Thread.isMainThread }
         return target
     }
 
@@ -52,7 +52,7 @@ private final class GatedProbe: VoiceFocusProbing, @unchecked Sendable {
     private let gate = DispatchSemaphore(value: 0)
     private let checking = DispatchSemaphore(value: 0)
 
-    func capture() -> VoiceTarget { inner.capture() }
+    func capture(pid: pid_t?) -> VoiceTarget { inner.capture(pid: pid) }
 
     func release() { gate.signal() }
     func waitForCheck() async -> Bool {
@@ -394,6 +394,7 @@ struct FocusedFieldDeliveryTests {
         #expect(await delivery.deliver(session: 3, text: "迟到") == .unverifiable)
         #expect(await delivery.deliver(session: 4, text: "这一句") == nil)
         #expect(probe.inserted == ["这一句"])
+        #expect(probe.captureWasOnMainThread == false)
     }
 
     @Test @MainActor func 交付途中取消_随即开始新会话_旧会话仍不交付() async {

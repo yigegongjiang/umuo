@@ -10,6 +10,26 @@ private final class CopyWatch: ClipboardCopyWatching {
 }
 
 struct ClipboardFallbackTests {
+    @Test(arguments: [false, true])
+    func 来源变化_拒绝按键或丢弃已经复制的内容(changeAfterCopy: Bool) {
+        let board = FakePasteboard("旧内容")
+        let watch = CopyWatch()
+        var copied = false
+        let fallback = ClipboardFallback(pasteboard: board, copy: {
+            copied = true
+            board.setString("选区内容", forType: .string)
+        }, beginWatching: { watch }, wait: { _ in })
+        let changed = SelectionError.other(UserText("error.targetChanged"))
+        #expect(throws: changed) {
+            _ = try fallback.read { () throws(SelectionError) in
+                if copied || !changeAfterCopy { throw changed }
+            }
+        }
+        #expect(copied == changeAfterCopy)
+        #expect(watch.stopped)
+        if !changeAfterCopy { #expect(board.string(forType: .string) == "旧内容") }
+    }
+
     @Test func 应用先清空后写数据_等文本就位才恢复快照() throws {
         let board = FakePasteboard("旧内容")
         let watch = CopyWatch()

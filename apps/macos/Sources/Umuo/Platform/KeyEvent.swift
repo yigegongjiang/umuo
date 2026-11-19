@@ -27,6 +27,7 @@ enum KeyEvent {
     /// 硬编码键码会按成 ⌘J / ⌘K。带上 ⌘ 修饰去翻，「Dvorak - QWERTY ⌘」这类布局得到的是 QWERTY 位置。
     /// 取词与写回都在后台线程，只读缓存：TIS 在较新的 macOS 上断言主队列，后台调用会直接崩。
     static func copy() throws(SelectionError) { try sendCommandKey(layoutKeys.current.copy) }
+    static func copy(to pid: pid_t) throws(SelectionError) { try sendCommandKey(layoutKeys.current.copy, to: pid) }
     static func paste() throws(SelectionError) { try sendCommandKey(layoutKeys.current.paste) }
 
     /// 当前布局下 ⌘C / ⌘V 的键码。主线程写（启动时、切换输入法时），任意线程读，读不等主线程。
@@ -76,9 +77,10 @@ enum KeyEvent {
         return event
     }
 
-    private static func sendCommandKey(_ key: CGKeyCode) throws(SelectionError) {
+    private static func sendCommandKey(_ key: CGKeyCode, to pid: pid_t? = nil) throws(SelectionError) {
         for down in [true, false] {
-            try make(key, down: down).post(tap: .cghidEventTap)
+            let event = try make(key, down: down)
+            if let pid { event.postToPid(pid) } else { event.post(tap: .cghidEventTap) }
         }
         // 给目标 App 一点时间把复制结果写进剪贴板；太快轮询会以为「没复制成功」，白白走一遍超时。
         Thread.sleep(forTimeInterval: 0.06)
