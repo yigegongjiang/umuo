@@ -105,7 +105,7 @@ bun run dev:macos    # 編譯 Rust 綁定與 SwiftUI 用戶端後啟動（macOS 
 ### PopClip
 
 裝有 [PopClip](https://www.popclip.app/)（2024.12 以上）時，執行 `open scripts/popclip/umuo.popclipext` 安裝擴充功能。
-之後選取文字、點 PopClip 列上的 umuo 圖示，譯文同樣會出現在滑鼠游標附近的浮動視窗裡。擴充功能透過 `umuo://translate?text=…` 喚起 umuo。
+之後選取文字、點 PopClip 列上的 umuo 圖示，譯文同樣會出現在滑鼠游標附近的浮動視窗裡。擴充功能透過 `umuo://translate?text=…` 喚起 umuo；umuo 只接受 PopClip 發來的這個連結。
 
 ## 儲存庫結構
 

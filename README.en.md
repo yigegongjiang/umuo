@@ -103,7 +103,7 @@ Both shortcuts can be changed under **Settings → Translation → Voice Input**
 ### PopClip
 
 With [PopClip](https://www.popclip.app/) 2024.12 or later installed, run `open scripts/popclip/umuo.popclipext` to install the extension.
-Then select text and click the umuo icon in the PopClip bar: the translation appears in the same floating panel next to your pointer. The extension opens `umuo://translate?text=…`.
+Then select text and click the umuo icon in the PopClip bar: the translation appears in the same floating panel next to your pointer. The extension opens `umuo://translate?text=…`; umuo accepts this link only from PopClip.
 
 ## Repository layout
 

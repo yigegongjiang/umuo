@@ -105,7 +105,7 @@ bun run dev:macos    # Rust バインディングと SwiftUI クライアント�
 ### PopClip
 
 [PopClip](https://www.popclip.app/)（2024.12 以降）を使っている場合は、`open scripts/popclip/umuo.popclipext` で拡張機能をインストールできます。
-あとはテキストを選択して PopClip バーの umuo アイコンをクリックすると、同じくマウスカーソルの近くのパネルに訳文が表示されます。拡張機能は `umuo://translate?text=…` で umuo を呼び出します。
+あとはテキストを選択して PopClip バーの umuo アイコンをクリックすると、同じくマウスカーソルの近くのパネルに訳文が表示されます。拡張機能は `umuo://translate?text=…` で umuo を呼び出します。umuo はこのリンクを PopClip からのみ受け付けます。
 
 ## リポジトリ構成
 
