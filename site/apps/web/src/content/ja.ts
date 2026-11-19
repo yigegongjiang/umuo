@@ -8,7 +8,7 @@ export const ja: SiteContent = {
   seo: {
     title: 'umuo — 読む・書くをワンキーで翻訳 | Mac AI 翻訳',
     description:
-      'umuo は macOS 向けの AI 翻訳アプリ。⌃⌃ で選択範囲を翻訳、⌥⌘A で入力翻訳、⌥⌥ で入力欄をその場で置き換え、⌥⌘O でスクリーンショット翻訳。自分の API キー（GPT、Claude、Gemini など）やローカルモデルでそのまま使え、完全無料でサブスクリプションはなく、アカウントも不要です。音声入力は試験運用の機能として使えます。',
+      'umuo は macOS 向けの AI 翻訳アプリ。⌃⌃ で選択範囲を翻訳、⌥⌘A で入力翻訳、⌥⌥ で入力欄をその場で置き換え、⌥⌘O でスクリーンショット翻訳。自分の API キー（GPT、Claude、Gemini など）やローカルモデルでそのまま使え、完全無料でサブスクリプションはなく、アカウントも不要です。音声入力にも対応しています。',
     ogLocale: 'ja_JP',
   },
   nav: {
@@ -59,12 +59,12 @@ export const ja: SiteContent = {
           id: 'speak',
           hint: '⌃⌘V を押したまま話すと、離したときに目標言語へ翻訳します。⌥⌘V なら同じ言語のまま整えます',
           name: '音声入力',
-          tag: '試験運用',
+          keys: ['⌃', '⌘', 'V'],
           before: 'えーと、会議を金曜日に移せますか',
           beforeLang: 'ja',
           after: 'Could we move the meeting to Friday?',
           afterLang: 'en',
-          note: '試験運用：プレビュー版に含まれています。文字起こしは Mac 上で行い、初回利用時に約 560 MB の音声モデルをダウンロードします。',
+          note: '文字起こしは Mac 上で行い、初回利用時に約 560 MB の音声モデルをダウンロードします。',
         },
       ],
     },

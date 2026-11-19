@@ -215,7 +215,11 @@ describe('手机端：文字、下载与演示排成一列', () => {
     .map((rest) => rest.slice(0, rest.indexOf('\n  }\n')))
 
   it('触屏条件下字符网格、演示与下载按钮都照常显示', () => {
-    expect(touchBlocks.some((block) => /display: none;/.test(block))).toBe(false)
+    expect(
+      touchBlocks.some((block) =>
+        /(?:\.language-grid|\.hero-demo|\.download-panel)\s*\{[^}]*display: none;/.test(block),
+      ),
+    ).toBe(false)
     // 按视口高度给手机分档的规则已经删掉
     expect(css).not.toMatch(/max-height/)
     expect(css).not.toContain(':has(.download-next)')
@@ -226,8 +230,26 @@ describe('手机端：文字、下载与演示排成一列', () => {
     expect(host.querySelectorAll('#download .download-panel .btn-solid')).toHaveLength(1)
   })
 
-  it('「开发中」标签窄屏下只收字号，不缩成圆点', () => {
-    expect(css).not.toMatch(/\.demo-tabs \.tag \{[^}]*font-size: 0;/)
+  it('触屏原生语言选择器就地切换并保存语言', () => {
+    const select = host.querySelector<HTMLSelectElement>('footer select')
+    if (!select) throw new Error('找不到语言选择器')
+    expect([...select.options].map(({ value }) => value)).toEqual([
+      'en',
+      'zh-cn',
+      'zh-tw',
+      'ja',
+      'ko',
+    ])
+    expect(select.value).toBe('zh-cn')
+    act(() => {
+      select.value = 'ja'
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    expect(window.location.pathname).toBe('/')
+    expect(document.cookie).toContain('umuo-lang=ja')
+    expect(document.documentElement.dataset.locale).toBe('ja')
+    expect(select.value).toBe('ja')
+    expect(host.querySelector('footer ul')).toBeNull()
   })
 })
 

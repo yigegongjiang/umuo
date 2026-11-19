@@ -147,18 +147,14 @@ function HeroDemo({ demo }: { demo: SiteContent['hero']['demo'] }) {
               onKeyDown={(event) => onTabKey(event, index)}
             >
               <span className="demo-tab-name">{item.name}</span>
-              {item.tag ? (
-                <span className="tag">{item.tag}</span>
-              ) : item.keys ? (
-                <span className="demo-keys" aria-hidden="true">
-                  {item.keys.map((key, keyIndex) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: 键帽是静态列表，且连按会出现两个相同的键
-                    <kbd key={keyIndex} className="keycap keycap-xs">
-                      {key}
-                    </kbd>
-                  ))}
-                </span>
-              ) : null}
+              <span className="demo-keys" aria-hidden="true">
+                {item.keys.map((key, keyIndex) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: 键帽是静态列表，且连按会出现两个相同的键
+                  <kbd key={keyIndex} className="keycap keycap-xs">
+                    {key}
+                  </kbd>
+                ))}
+              </span>
             </button>
           )
         })}

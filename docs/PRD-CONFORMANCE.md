@@ -58,7 +58,7 @@
 | --- | --- | --- | --- | --- |
 | C5 | §5.12、§10 | MIT 许可与开源 | ✅ | 整个仓库（含 `site/`）为标准 MIT 文本（GitHub 可识别），名称与图标说明移至 README；历史压成里程碑并脱敏，2026-11-02 以干净历史重建并公开 github.com/youming-ai/umuo；官网 `SOURCE_PUBLIC` 打开。2026-11-12 完成第三方许可核查（基于 crate 声明的 SPDX 元数据与发布包内许可文件）：`THIRD_PARTY_NOTICES` 按类别登记编进二进制的 111 个 Rust crate（绑定生成工具拆到 `crates/umuo-bindgen`，不再进正式包的依赖图）（含 uniffi 的 MPL-2.0 与 bundled SQLite）、Sparkle 2.10.0 与 transcribe.cpp；`scripts/third-party-licenses.ts` 按 `Cargo.lock` 生成全部 crate 的许可原文，`bundle.sh` 随包写入 `Contents/Resources/Licenses/`（`rust-crates.txt`、`Sparkle/LICENSE`、`transcribe.cpp/`）并在冒烟里断言 |
 | C6 | §5.12 | 客户端与服务端无收费路径 | ✅ | 客户端删除 `License/`（7 个文件）与 `LicenseTests`、`ActionRouter.gate`、设置许可证页、引导试用说明、46 个文案 key 与 `umuo://` URL scheme；Worker 删除 checkout/webhook/`/api/license/*`、`billing.ts`、`waffo-setup.ts`、`@waffo/pancake-ts` 与 `LICENSES` KV 绑定。远端 `umuo-licenses` KV、`WAFFO_PRIVATE_KEY` secret 与 Waffo 后台商品待手动清理 |
-| C7 | §11 | 五语言官网免费开源文案；官网只有首页，不再提供条款与隐私页 | ✅ | 删除 `/activate`、购买按钮、`/pricing`、`/terms` 与 `/privacy`（旧地址返回 404）；页脚只留版权与语言切换；`SOURCE_PUBLIC` 已为 true，页眉显示 GitHub 源码链接；内容测试禁止收费时代表述。五语言在 1280×720 桌面与 390×844 触屏的本地浏览器一屏实测已通过 |
+| C7 | §11 | 五语言官网免费开源文案；官网只有首页，不再提供条款与隐私页 | ✅ | 删除 `/activate`、购买按钮、`/pricing`、`/terms` 与 `/privacy`（旧地址返回 404）；页脚只留版权与语言切换；`SOURCE_PUBLIC` 已为 true，页眉显示 GitHub 源码链接；内容测试禁止收费时代表述。触屏使用系统语言选择器，桌面保留向上展开的菜单。390×844 触屏模拟验证五语言切换、cookie 持久化和无横向溢出，1280×720 桌面验证单屏及 Esc 收起。语音演示展示快捷键与首次下载提示；官网验证通过 101 项 Vitest 和预渲染构建 |
 
 ## 更新与发布
 

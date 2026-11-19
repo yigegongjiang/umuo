@@ -44,7 +44,7 @@ You can also build it yourself — see "Build from source" below. Homebrew insta
 
 ## Project documentation
 
-On-device acceptance testing is pending. Voice input is experimental.
+On-device acceptance testing is pending.
 
 Project docs (developer docs are in Simplified Chinese):
 
