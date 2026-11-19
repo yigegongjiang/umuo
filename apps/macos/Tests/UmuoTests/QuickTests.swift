@@ -44,6 +44,7 @@ private final class FakeQuick: QuickBackend {
 
     func openSettings() { opened.append("settings") }
     func openHistory() { opened.append("history") }
+    func quit() { opened.append("quit") }
 }
 
 @MainActor

@@ -120,6 +120,10 @@ final class HistoryModel {
     func delete(_ id: Int64) async {
         // 异步按钮任务执行时，搜索结果可能已更新；只删除当前列表中的记录。
         guard records.contains(where: { $0.id == id }) else { return }
+        // 删除不能撤销（存储层没有回收站），与「清空」一样先确认
+        guard await backend.confirmClear(t("history.confirmDelete"), confirm: t("history.delete"),
+                                         cancel: t("common.cancel")) else { return }
+        guard records.contains(where: { $0.id == id }) else { return }
         do {
             try await backend.delete(id: id)
             await reload()

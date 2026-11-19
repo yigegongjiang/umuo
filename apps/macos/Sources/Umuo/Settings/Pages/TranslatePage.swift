@@ -93,7 +93,7 @@ struct HotkeyRecorderButton: View {
         let t = model.t
         let recording = editor.recording == field
         let parts = HotkeyFormat.parts(model.values.string(field), rightLabel: t("prefs.hotkey.right"))
-        let label = recording ? t("prefs.hotkey.recording") : parts.isEmpty ? t("prefs.hotkey.unset") : parts.joined(separator: " ")
+        let label = recording ? t("prefs.hotkey.recordingShort") : parts.isEmpty ? t("prefs.hotkey.unset") : parts.joined(separator: " ")
         VStack(alignment: .trailing, spacing: 4) {
             let button = Button {
                 editor.toggle(field)
@@ -107,8 +107,20 @@ struct HotkeyRecorderButton: View {
                 if recording { button.buttonStyle(.borderedProminent) } else { button.buttonStyle(.bordered) }
             }
             .accessibilityAddTraits(recording ? .isSelected : [])
-            if recording, let notice = editor.notice {
-                Text(notice).font(.caption).foregroundStyle(.orange)
+            // 录制中的完整说明放在按钮下：120pt 的按钮放不下整句（四种语言都会被截断）。
+            // 冲突提示用多色警告符号表达状态，文字保持次要色，浅色模式下橙色小字对比度不够
+            if recording {
+                Group {
+                    if let notice = editor.notice {
+                        Label(notice, systemImage: "exclamationmark.triangle.fill").symbolRenderingMode(.multicolor)
+                    } else {
+                        Text(t("prefs.hotkey.recording"))
+                    }
+                }
+                .font(.caption).foregroundStyle(.secondary)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 260, alignment: .trailing)
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

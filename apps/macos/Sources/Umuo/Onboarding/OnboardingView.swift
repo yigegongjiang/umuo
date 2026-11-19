@@ -64,8 +64,10 @@ struct OnboardingView: View {
                 PrefButton(title: t("onboarding.skip")) { Task { await model.finish() } }
                 if model.step.next != nil {
                     PrefButton(title: t("onboarding.next"), prominent: true) { model.next() }
+                        .keyboardShortcut(.defaultAction)
                 } else {
                     PrefButton(title: t("onboarding.finish"), prominent: true) { Task { await model.finish() } }
+                        .keyboardShortcut(.defaultAction)
                 }
             }
         }

@@ -165,7 +165,8 @@ final class PanelController: PanelBackend {
                 try? await Task.sleep(for: .milliseconds(500))
                 // 控制器没了就结束循环，不再空转
                 guard let self else { return }
-                guard self.window.isVisible else { continue }
+                // 钉住时一定不收起：不必每 500 ms 做一次 AX 往返
+                guard self.window.isVisible, !self.session.pinned else { continue }
                 let owner = self.session.owner
                 let pinned = self.session.pinned
                 let current = await Task.detached { FrontmostApp.liveToken() }.value

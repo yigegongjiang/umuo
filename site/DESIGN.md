@@ -43,12 +43,60 @@ typography:
     fontSize: "0.6875rem"
     fontWeight: 500
     lineHeight: 1
+  display-narrow:
+    fontFamily: "Open Sans, -apple-system, PingFang SC, sans-serif"
+    fontSize: "clamp(1.875rem, 8.5vw, 2.25rem)"
+    fontWeight: 600
+    lineHeight: 1.08
+  display-touch:
+    fontFamily: "Open Sans, -apple-system, PingFang SC, sans-serif"
+    fontSize: "clamp(2rem, 9.5vw, 2.5rem)"
+    fontWeight: 600
+    lineHeight: 1.12
+  translation:
+    fontFamily: "Open Sans, -apple-system, PingFang SC, sans-serif"
+    fontSize: "1.3125rem"
+    fontWeight: 400
+    lineHeight: 1.5
+  translation-demo:
+    fontFamily: "Open Sans, -apple-system, PingFang SC, sans-serif"
+    fontSize: "clamp(1.1875rem, 2.8svh, 1.5rem)"
+    fontWeight: 400
+    lineHeight: 1.5
+  control:
+    fontFamily: "Open Sans, -apple-system, PingFang SC, sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 500
+    lineHeight: 1.4
+  note:
+    fontFamily: "Open Sans, -apple-system, PingFang SC, sans-serif"
+    fontSize: "0.8125rem"
+    fontWeight: 400
+    lineHeight: 1.5
+  translation-narrow:
+    fontFamily: "Open Sans, -apple-system, PingFang SC, sans-serif"
+    fontSize: "1.125rem"
+    fontWeight: 400
+    lineHeight: 1.5
+  lead-narrow:
+    fontFamily: "Open Sans, -apple-system, PingFang SC, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.6
+  tag:
+    fontFamily: "Open Sans, -apple-system, PingFang SC, sans-serif"
+    fontSize: "0.75rem"
+    fontWeight: 500
+    lineHeight: 1.4
 rounded:
+  wave: "2px"
+  selection: "3px"
   tag: "4px"
   keycap: "5px"
   control: "6px"
   button: "1rem"
   popover: "8px"
+  logo: "9px"
   card: "10px"
   demo: "12px"
 spacing:
@@ -155,6 +203,11 @@ components:
 - **Lead**（400，1.1875rem，1.6，最宽 34em）：标题下的导读。
 - **Body**（400，1.0625rem，1.6）：全站基准字号；首屏里的演示原文、译文与下载说明在它上下按视口收放。
 - **Label**（500，0.875rem）：演示模式名、系统要求这类元信息。
+- **Translation**（400，1.3125rem）：译文比原文（Body / Lead 档）大一号，是首屏里最显眼的一行字；首屏演示里按视口高度在 `clamp(1.1875rem, 2.8svh, 1.5rem)` 之间收放，≤1023px 收到 1.125rem，≤639px 收到 1.0625rem。
+- **Control**（500，0.9375rem）：按钮、键帽与窄窗口里的演示原文。
+- **Note**（400，0.8125rem）：下载区的放行说明、演示底注、窄窗口的选项卡名。
+- **Tag**（500，0.75rem）：状态标签与演示底部的提示条。
+- 窄窗口与手机上的标题各有一档（`display-narrow` / `display-touch`），导读收到 1rem；语言选择框固定 1rem，iOS 上点进去不会自动放大页面。
 
 ### Named Rules
 **The One Family Rule.** 只用自托管或系统字体，不引 Google Fonts 等外部字体服务。
@@ -173,6 +226,7 @@ components:
 页眉 logo + 「umuo」与 GitHub 图标，主体依次是标题、导读、下载按钮与系统要求，再往下是演示面板（四种模式照样可点），页脚版权与语言 / 主题切换。
 「请在 Mac 上打开」那句在触屏上隐藏：系统要求一行已说明是 Mac 应用。
 背景字符网格与桌面相同；logo 不加投影，页脚不画上边线。
+演示底部「在这个页面连按两下 ⌃ / ⌥ 试试」两条提示（`data-page-try`）在触屏上隐藏，手机没有键盘；截图与语音的提示讲的是 App 本身的用法，照常显示。
 手机端不按视口高度分档：标题 `clamp(2rem, 9.5vw, 2.5rem)`、导读 1.0625rem，间距用定值；首屏放下标题、导读与下载，演示在下面。
 平板（iPad）也命中这条件，排法相同。
 

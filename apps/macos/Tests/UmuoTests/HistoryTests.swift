@@ -281,8 +281,19 @@ struct HistoryModelTests {
         let model = HistoryModel(backend: backend, sleep: instant)
         await model.reload()
         await model.delete(1)
+        #expect(backend.confirmed == [t("history.confirmDelete")])
         #expect(backend.deleted == [1])
         #expect(model.records.isEmpty)
+    }
+
+    @Test func 删除前确认_取消则不删() async {
+        let backend = FakeHistory()
+        backend.confirm = false
+        let model = HistoryModel(backend: backend, sleep: instant)
+        await model.reload()
+        await model.delete(1)
+        #expect(backend.deleted.isEmpty)
+        #expect(model.records.count == 1)
     }
 
     @Test func 重载保留仍可见的选择并清理筛选外的选择() async {

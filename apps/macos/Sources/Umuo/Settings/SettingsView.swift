@@ -11,10 +11,8 @@ struct SettingsPane: View {
     private var t: Translate { model.t }
 
     var body: some View {
+        // 分区名只在窗口标题栏出现一次（`updateTitle`），与系统设置一致
         VStack(alignment: .leading, spacing: 0) {
-            Text(t(tab.titleKey)).font(.title2.weight(.semibold))
-                .accessibilityAddTraits(.isHeader)
-                .padding(.horizontal, 24).padding(.top, 22).padding(.bottom, 4)
             if model.isLoaded {
                 Form {
                     if let error = model.saveError {
@@ -141,9 +139,18 @@ private struct SettingsSidebar: View {
                 .padding(.horizontal, 18).padding(.top, 22)
             List(selection: Binding(get: { model.tab }, set: { if let tab = $0 { model.tab = tab } })) {
                 ForEach(SettingsTab.allCases, id: \.self) { tab in
-                    Label(model.t(tab.titleKey), systemImage: tab.symbol)
-                        .padding(.vertical, 5)
-                        .tag(tab)
+                    HStack {
+                        Label(model.t(tab.titleKey), systemImage: tab.symbol)
+                        Spacer(minLength: 4)
+                        // 缺 Key、缺权限这类要用户动手的分区：侧栏点一盏警示灯
+                        if model.attention.contains(tab) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .symbolRenderingMode(.multicolor)
+                                .accessibilityLabel(model.t("prefs.needsAttention"))
+                        }
+                    }
+                    .padding(.vertical, 5)
+                    .tag(tab)
                 }
             }
             .listStyle(.sidebar)

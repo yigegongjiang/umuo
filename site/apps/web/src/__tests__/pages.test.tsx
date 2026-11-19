@@ -225,6 +225,14 @@ describe('手机端：文字、下载与演示排成一列', () => {
     expect(css).not.toContain(':has(.download-next)')
   })
 
+  it('「在这个页面按键试试」的提示在触屏上隐藏，其余提示照常显示', () => {
+    expect(
+      touchBlocks.some((block) => /\.demo-hint\[data-page-try\]\s*\{\s*display: none;/.test(block)),
+    ).toBe(true)
+    // 默认停在划词：它的提示带标记
+    expect(host.querySelector('.demo-hint')?.hasAttribute('data-page-try')).toBe(true)
+  })
+
   it('手机上没有「复制网址」，下载按钮就是唯一的按钮', () => {
     expect(host.querySelector('.copy-button, .download-touch')).toBeNull()
     expect(host.querySelectorAll('#download .download-panel .btn-solid')).toHaveLength(1)

@@ -13,6 +13,7 @@ protocol QuickBackend: AnyObject {
     func copy(_ text: String) async -> String?
     func openSettings()
     func openHistory()
+    func quit()
 }
 
 /// 菜单栏快捷面板（PRD §7.1）的视图模型：暂停 / 恢复、当前模型、最近翻译。

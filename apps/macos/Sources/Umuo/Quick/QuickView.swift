@@ -74,6 +74,8 @@ struct QuickView: View {
                 link(t("quick.openHistory")) { model.backend.openHistory() }
                 link(t("quick.openSettings")) { model.backend.openSettings() }
                 Spacer(minLength: 0)
+                // 左键只出这个面板，退出不能只藏在右键菜单里
+                link(t("menu.quit")) { model.backend.quit() }
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
         }

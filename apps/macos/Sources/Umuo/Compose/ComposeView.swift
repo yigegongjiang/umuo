@@ -103,7 +103,7 @@ struct ComposeView: View {
                 }
             }
             if state.status == .idle {
-                Text(t("compose.emptyResult")).font(.callout).foregroundStyle(.tertiary)
+                Text(t("compose.emptyResult")).font(.callout).foregroundStyle(.secondary)
             }
             if state.status == .streaming, state.translation.isEmpty {
                 Text(t("compose.translating")).font(.body).foregroundStyle(Color.secondary)

@@ -64,8 +64,14 @@ final class ComposeController: ComposeBackend {
 
     private func show() {
         refreshAppearance()
-        // 每次唤出都重新居中：用户可能刚把窗口拖到别的屏幕
-        window.center()
+        // 每次唤出都居中到鼠标所在的屏幕（与浮窗、语音浮层同一口径），多显示器下出现在用户正在看的那块屏上
+        let mouse = NSEvent.mouseLocation
+        if let visible = (NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main)?.visibleFrame {
+            let size = window.frame.size
+            window.setFrameOrigin(NSPoint(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2))
+        } else {
+            window.center()
+        }
         window.makeKeyAndOrderFront(nil)
         // SwiftUI 第一次布局完才有 NSTextView
         DispatchQueue.main.async { [window] in window.focusInput() }
