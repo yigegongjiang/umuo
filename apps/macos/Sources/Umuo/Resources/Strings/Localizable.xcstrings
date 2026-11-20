@@ -7933,28 +7933,29 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "清空快捷键"
+            "value": "清空「%1$@」的快捷键"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "清除快速鍵"
+            "value": "清除「%1$@」的快速鍵"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clear Shortcut"
+            "value": "Clear Shortcut for %1$@"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ショートカットを消去"
+            "value": "「%1$@」のショートカットを消去"
           }
         }
-      }
+      },
+      "comment": "placeholders: name"
     },
     "prefs.hotkey.comboOnly": {
       "extractionState": "manual",

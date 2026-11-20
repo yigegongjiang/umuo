@@ -75,9 +75,9 @@ struct HotkeyRow: View {
 
     var body: some View {
         let t = model.t
-        PrefRow(title: title ?? t("prefs.translate.hotkey"), description: description,
-                error: model.hotkeys.message(field)) {
-            HotkeyRecorderButton(model: model, editor: model.hotkeys, field: field)
+        let title = title ?? t("prefs.translate.hotkey")
+        PrefRow(title: title, description: description, error: model.hotkeys.message(field)) {
+            HotkeyRecorderButton(model: model, editor: model.hotkeys, field: field, title: title)
         }
     }
 }
@@ -88,6 +88,8 @@ struct HotkeyRecorderButton: View {
     let model: SettingsModel
     let editor: HotkeyEditor
     let field: String
+    /// 行名：清空按钮的提示与 VoiceOver 标签带上它，各行的清空按钮才分得清
+    let title: String
 
     var body: some View {
         let t = model.t
@@ -115,8 +117,8 @@ struct HotkeyRecorderButton: View {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                 }
                 .buttonStyle(.borderless)
-                .help(t("prefs.hotkey.clear"))
-                .accessibilityLabel(t("prefs.hotkey.clear"))
+                .help(t("prefs.hotkey.clear", ["name": title]))
+                .accessibilityLabel(t("prefs.hotkey.clear", ["name": title]))
                 if recording || HotkeyCenter.isCleared(value) { clear.hidden() } else { clear }
             }
             // 录制中的完整说明放在按钮下：120pt 的按钮放不下整句（四种语言都会被截断）。
