@@ -310,7 +310,7 @@ Swift 使用进程内 AVSpeechSynthesizer，按机器实际安装的发音人匹
 
 ## 4.10 浮窗与菜单栏
 
-`PanelWindow` 是非激活 NSPanel，支持钉住、拖动与缩放。切走自动收起由可见期间的看门狗与应用层纯规则决定。
+`PanelWindow` 是非激活 NSPanel，支持钉住、拖动与缩放。自动收起只在浮窗可见期间生效：看门狗以浮窗出现时的前台应用为参照，按应用层纯规则判断切走；全局鼠标监听在其他应用里按下鼠标时收起。钉住或截图框选进行中不收起，自动收起不作废之后的快捷键。
 `StatusBar` 使用 NSStatusItem，左键打开 NSPopover 快捷面板、右键打开菜单；菜单栏图标是 Swift 资源里的一份模板图，由系统按菜单栏明暗着色。
 图标生成脚本写入 `apps/macos/packaging/icon.icns` 与 `Resources/Tray/`，不依赖旧客户端目录。
 

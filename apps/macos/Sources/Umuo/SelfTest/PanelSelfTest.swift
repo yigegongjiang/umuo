@@ -67,10 +67,10 @@ enum PanelSelfTest {
 
     static func rules(_ check: (String, Bool, String) -> Void) {
         let own = PanelController.ownToken
-        let hide = shouldAutoHide(pinned: false, owner: "1", current: "2", own: own)
-            && !shouldAutoHide(pinned: true, owner: "1", current: "2", own: own)
-            && !shouldAutoHide(pinned: false, owner: "1", current: own, own: own)
-            && !shouldAutoHide(pinned: false, owner: "1", current: nil, own: own)
+        let hide = shouldAutoHide(pinned: false, anchor: "1", current: "2", own: own)
+            && !shouldAutoHide(pinned: true, anchor: "1", current: "2", own: own)
+            && !shouldAutoHide(pinned: false, anchor: "1", current: own, own: own)
+            && !shouldAutoHide(pinned: false, anchor: "1", current: nil, own: own)
         check("shouldAutoHide", hide, "切走才收起；钉住、前台是自己、读不到标识都不收起")
         let plan = planReplace(owner: own, current: "1", own: own) == .noSource
             && planReplace(owner: "1", current: own, own: own) == .refocus

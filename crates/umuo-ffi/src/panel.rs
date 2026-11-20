@@ -29,15 +29,15 @@ impl From<rules::ReplacePlan> for ReplacePlan {
     }
 }
 
-/// 看门狗：用户是不是切到了别的应用、浮窗该不该收起。`own` 是本进程的 pid。
+/// 看门狗：用户是不是切到了别的应用、浮窗该不该收起。`anchor` 是浮窗出现时的前台应用，`own` 是本进程的 pid。
 #[uniffi::export]
 pub fn should_auto_hide(
     pinned: bool,
-    owner: Option<String>,
+    anchor: Option<String>,
     current: Option<String>,
     own: String,
 ) -> bool {
-    rules::should_auto_hide(pinned, owner.as_deref(), current.as_deref(), &own)
+    rules::should_auto_hide(pinned, anchor.as_deref(), current.as_deref(), &own)
 }
 
 #[uniffi::export]

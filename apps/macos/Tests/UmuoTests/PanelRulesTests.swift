@@ -148,12 +148,14 @@ struct PanelRulesTests {
     // 看门狗与替换原文的判据在 Rust（umuo_app::panel，测试在那边）；这里确认 FFI 导出的语义没走样。
     @Test func 看门狗_切走才收起_钉住与前台是自己都不收起() {
         let own = PanelController.ownToken
-        #expect(shouldAutoHide(pinned: false, owner: "100", current: "200", own: own))
-        #expect(!shouldAutoHide(pinned: true, owner: "100", current: "200", own: own))
-        #expect(!shouldAutoHide(pinned: false, owner: "100", current: own, own: own))
-        #expect(!shouldAutoHide(pinned: false, owner: own, current: "200", own: own))
-        #expect(!shouldAutoHide(pinned: false, owner: "100", current: nil, own: own))
-        #expect(!shouldAutoHide(pinned: false, owner: nil, current: "200", own: own))
+        #expect(shouldAutoHide(pinned: false, anchor: "100", current: "200", own: own))
+        #expect(!shouldAutoHide(pinned: true, anchor: "100", current: "200", own: own))
+        #expect(!shouldAutoHide(pinned: false, anchor: "100", current: "100", own: own))
+        #expect(!shouldAutoHide(pinned: false, anchor: "100", current: own, own: own))
+        #expect(!shouldAutoHide(pinned: false, anchor: "100", current: nil, own: own))
+        #expect(!shouldAutoHide(pinned: false, anchor: nil, current: "200", own: own))
+        // 在本应用的窗口里唤起的浮窗，切到别的应用同样收起
+        #expect(shouldAutoHide(pinned: false, anchor: own, current: "200", own: own))
     }
 
     @Test func 替换原文的计划与守卫() {

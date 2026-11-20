@@ -4,34 +4,36 @@
 //!
 //! 标识（token）一律是前台应用的 pid 十进制字符串（Swift 端 `FrontmostApp.liveToken`）；
 //! `own` 是本应用自己的 pid。**不要**传 `Host::write_target_token`：那是静默翻译用的控件身份，口径不同，
-//! 混用会让每次比较都不相等。浮窗归属是 `own` 表示「没有源应用」（截图 OCR）。
+//! 混用会让每次比较都不相等。浮窗归属（写回目标）是 `own` 表示「没有源应用」（截图 OCR）；
+//! 看门狗的参照另算，是浮窗出现时的前台应用，截图 OCR 也有。
 
 use umuo_core::error::CoreError;
 
 use crate::settings::Settings;
 use crate::translate::target_still_matches;
 
-/// 是否应当因为「用户切到了别的应用」而收起浮窗（PRD §7.1：失焦关闭，可钉住）。
+/// 是否应当因为「用户切到了别的应用」而收起浮窗（PRD §5.1：切走或点击外部即收起，可钉住）。
 ///
 /// 为什么不用窗口的失焦事件：浮窗是**非激活**窗口，不接受焦点，没有可靠的 blur 事件可听。
 /// 而「用户切走了」才是他真正想收起浮窗的信号——所以用前台应用标识判定。
 ///
+/// `anchor` 是浮窗出现时的前台应用：划词与 PopClip 即源应用，截图 OCR 是框选结束后回到前台的那个应用。
+/// 不拿归属（写回目标）当参照：截图 OCR 的归属是 `own`（没有可替换的原文），拿它比就永远收不起来。
+///
 /// 拿不到标识时**不收起**：宁可让浮窗多留一会儿，也不能让用户正在读的东西凭空消失。
 ///
 /// 前台是自己（用户在用本应用的撰写窗、设置窗）不算切走（审查 H5）。
-/// 浮窗归属于自己（没有源应用）时也不按切走收起——否则截图框选一结束、焦点回到别的应用，
-/// 浮窗就跟着消失了。
 pub fn should_auto_hide(
     pinned: bool,
-    owner: Option<&str>,
+    anchor: Option<&str>,
     current: Option<&str>,
     own: &str,
 ) -> bool {
     if pinned {
         return false;
     }
-    match (owner, current) {
-        (Some(owner), Some(current)) => owner != own && current != own && owner != current,
+    match (anchor, current) {
+        (Some(anchor), Some(current)) => current != own && current != anchor,
         _ => false,
     }
 }
@@ -135,9 +137,10 @@ mod auto_hide_tests {
     }
 
     #[test]
-    fn a_panel_owned_by_umuo_itself_is_not_hidden_by_focus_changes() {
-        // 截图 OCR：浮窗显示时前台是自己，框选结束后焦点回到别的应用也不该收起。
-        assert!(!should_auto_hide(false, Some(OWN), Some("app-B"), OWN));
+    fn leaving_umuo_hides_a_panel_shown_while_umuo_was_in_front() {
+        // 在本应用的窗口里唤起（首次引导试译、撰写窗里按划词键）：切到别的应用同样收起。
+        assert!(should_auto_hide(false, Some(OWN), Some("app-B"), OWN));
+        assert!(!should_auto_hide(false, Some(OWN), Some(OWN), OWN));
     }
 }
 
@@ -165,14 +168,13 @@ mod replace_plan_tests {
     }
 
     #[test]
-    fn entries_without_a_selection_never_write_back_or_auto_hide() {
+    fn entries_without_a_selection_never_write_back() {
         // 截图 OCR 的结果不能写进上一次划词的应用、也不能写进截图结束后的前台应用。
         for current in [OWN, "app-A", "app-B"] {
             assert_eq!(
                 plan_replace(Some(OWN), Some(current), OWN),
                 ReplacePlan::NoSource
             );
-            assert!(!should_auto_hide(false, Some(OWN), Some(current), OWN));
         }
     }
 
