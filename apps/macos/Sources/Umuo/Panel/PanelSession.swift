@@ -143,7 +143,7 @@ final class PanelSession {
     }
 
     /// ✕：收起浮窗，并放弃还没出结果的这一次（取词中、等 Start、流式中）：用户关掉了，原地替换就不该再写回。
-    /// 看门狗的收起不走这里：切走后按的新快捷键还要照常弹出。
+    /// 自动收起（切走、点到浮窗外面）不走这里：之后按的新快捷键还要照常弹出。
     func close() {
         backend?.abandonPendingTrigger()
         if inFlight { backend?.cancelTranslation() }

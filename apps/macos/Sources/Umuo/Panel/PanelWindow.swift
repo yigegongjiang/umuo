@@ -7,7 +7,8 @@ import SwiftUI
 ///   按 ⌥D 是想看译文，不是想把焦点从正在写的文档里挪走；「替换原文」也因此通常不用先切回源应用。
 /// - `becomesKeyOnlyIfNeeded`：点按钮不拿键盘焦点，只有点进文本框（OCR 结果的可改原文）才成为 key。
 ///   所以 Esc 不靠窗口收：浮窗可见期间由 `PanelController.armEscape` 注册成系统级热键；这里的 keyDown 只是兜底。
-/// - 浮动层级、出现在所有桌面空间与全屏应用之上；切到别的应用不自动隐藏（收起由看门狗按前台应用判断）。
+/// - 浮动层级、出现在所有桌面空间与全屏应用之上；不靠 `hidesOnDeactivate` 收起（umuo 本来就不在前台），
+///   切走或点到外面时由 `PanelController` 的自动收起负责。
 /// - 外壳是系统的（`FloatingPanelChrome`）：圆角、阴影、拖边缩放都由窗口框架负责，不再自己画。
 final class PanelWindow: NSPanel {
     /// Esc 的兜底（只有浮窗是 key 时才收得到；平时走 `PanelController.armEscape` 的系统级热键）。

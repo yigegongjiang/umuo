@@ -29,7 +29,13 @@ final class PanelController: PanelBackend {
     var triggers = TriggerGate()
     /// 截图翻译的框选（`screencapture -i`）正在进行：再按一次快捷键直接忽略，不再起第二个框选。只在 MainActor 上读写。
     var ocrInFlight = false
+    /// 看门狗的参照：浮窗出现时的前台应用（pid）。前台换成别的应用（不是它、也不是本应用）即收起。
+    /// 划词与 PopClip 就是归属；截图翻译的归属是本应用自己（没有可替换的原文），参照另取当时的前台。
+    /// nil = 还没取到，看门狗不收起。
+    private var anchor: String?
     private var watchdog: Task<Void, Never>?
+    /// 浮窗可见期间监听别的应用里的鼠标按下（点到浮窗外面即收起），收起时移除。
+    private var outsideClicks: Any?
     /// 浮窗可见期间的 Esc（见 `armEscape`），与语音浮层共用一个注册者，按最近认领的一方路由。
     private var escape: EscapeRouter { app.escape }
 
@@ -48,6 +54,7 @@ final class PanelController: PanelBackend {
         showGeneration += 1
         session.writeTarget = owner == nil ? nil : target
         session.owner = owner
+        anchor = owner
     }
 
     func showNearCursor() {
@@ -56,25 +63,18 @@ final class PanelController: PanelBackend {
         place()
         window.orderFrontRegardless()
         syncEscape()
-        startWatchdog()
-        showGeneration += 1
-        let generation = showGeneration
+        startAutoHide()
         session.owner = nil
-        Task.detached {
-            let token = FrontmostApp.liveToken()
-            await MainActor.run {
-                if self.showGeneration == generation { self.session.owner = token }
-            }
-        }
+        sampleFrontmost(asOwner: true)
     }
 
     /// 截图翻译这类**不经划词**的入口：浮窗没开就开出来；已经开着就不挪位置（免得把用户正在看的浮窗拽到鼠标下）。
     ///
     /// 无论开没开，归属都重设为本应用自己：原文不来自任何应用，没有可替换的原文；
     /// 也不能沿用上一次划词的归属（「替换原文」会把 OCR 译文写进那个应用）。先写归属再显示。
+    /// 切走即收起的参照另取显示之后的前台应用（`anchor`），与归属无关。
     func ensureShown() {
         session.writeTarget = nil
-        showGeneration += 1
         // 浮窗换成了这次的内容：还没取完的划词按键不能再把它挪走、把归属改回某个应用
         triggers.invalidate()
         session.owner = Self.ownToken
@@ -84,15 +84,37 @@ final class PanelController: PanelBackend {
             window.orderFrontRegardless()
         }
         syncEscape()
-        startWatchdog()
+        startAutoHide()
+        sampleFrontmost(asOwner: false)
     }
 
+    /// 显示之后在后台取一次前台应用，记成看门狗的参照；`asOwner` 时同时记成归属。只认最新的那次显示。
+    /// 取到之前参照为空（看门狗不收起）：沿用上一次的参照的话，换了应用唤起会被当场判成「切走」。
+    private func sampleFrontmost(asOwner: Bool) {
+        anchor = nil
+        showGeneration += 1
+        let generation = showGeneration
+        Task.detached {
+            let token = FrontmostApp.liveToken()
+            await MainActor.run {
+                guard self.showGeneration == generation else { return }
+                self.anchor = token
+                if asOwner { self.session.owner = token }
+            }
+        }
+    }
+
+    /// 用户收起（Esc、✕）：还没取完的按键一并作废，取完后不再把浮窗弹出来。
     func hidePanel() {
         triggers.invalidate()
+        orderOut()
+    }
+
+    /// 只收窗口，不碰按键：切走或点到外面时自动收起走这里——之后按的新快捷键还要照常弹出浮窗。
+    private func orderOut() {
         window.orderOut(nil)
         escape.release(.panel)
-        watchdog?.cancel()
-        watchdog = nil
+        stopAutoHide()
     }
 
     /// 按 `session.capturesGlobalEscape` 同步全局 Esc：未钉住或正在流式翻译时挂载，已钉住且空闲时注销。
@@ -153,9 +175,37 @@ final class PanelController: PanelBackend {
         session.locale = app.locale
     }
 
-    /// 「切走就收起」看门狗（PRD §7.1：失焦关闭，可钉住）。
+    // MARK: - 自动收起（PRD §5.1：切走或点击外部即收起，可钉住）
+
+    /// 浮窗可见期间的两路自动收起：切到别的应用（看门狗）、点到浮窗外面（全局鼠标监听）。
+    /// 钉住时都不收起；截图框选进行中也不收起：框选的拖动与焦点变化不是用户要离开，收了就挡掉了正在等的识别结果。
+    private func startAutoHide() {
+        startWatchdog()
+        guard outsideClicks == nil else { return }
+        // 全局监听只收到发往别的应用的事件：点浮窗自己、撰写窗、设置窗都不会触发；鼠标事件不需要额外授权
+        let mouseDown: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        outsideClicks = NSEvent.addGlobalMonitorForEvents(matching: mouseDown) { [weak self] _ in
+            // 全局监听在主线程上回调
+            MainActor.assumeIsolated {
+                guard let self, self.autoHideAllowed else { return }
+                self.orderOut()
+            }
+        }
+    }
+
+    private func stopAutoHide() {
+        watchdog?.cancel()
+        watchdog = nil
+        if let outsideClicks { NSEvent.removeMonitor(outsideClicks) }
+        outsideClicks = nil
+    }
+
+    private var autoHideAllowed: Bool { window.isVisible && !session.pinned && !ocrInFlight }
+
+    /// 「切走就收起」看门狗。
     ///
     /// 为什么轮询：浮窗不激活、不拿焦点，没有可靠的失焦事件；用户真正想表达的是「切到了别的应用」。
+    /// 键盘切换（⌘Tab、Spotlight）没有鼠标点击，只能靠它。
     /// 500 ms 一次，**只在浮窗可见时才查**（收起时整个循环停掉）；前台 pid 是 AX 调用，后台取，
     /// 判据是 Rust 的 `should_auto_hide`（拿不到标识不收起、前台是自己不算切走）。
     private func startWatchdog() {
@@ -166,14 +216,13 @@ final class PanelController: PanelBackend {
                 // 控制器没了就结束循环，不再空转
                 guard let self else { return }
                 // 钉住时一定不收起：不必每 500 ms 做一次 AX 往返
-                guard self.window.isVisible, !self.session.pinned else { continue }
-                let owner = self.session.owner
-                let pinned = self.session.pinned
+                guard self.autoHideAllowed else { continue }
+                let anchor = self.anchor
                 let current = await Task.detached { FrontmostApp.liveToken() }.value
-                // 取 pid 的这一会儿里浮窗可能已经换了归属或被钉住：以最新的为准
-                guard self.window.isVisible, owner == self.session.owner, pinned == self.session.pinned else { continue }
-                if shouldAutoHide(pinned: pinned, owner: owner, current: current, own: Self.ownToken) {
-                    self.hidePanel()
+                // 取 pid 的这一会儿里浮窗可能已经换了参照、被钉住或开始框选：以最新的为准
+                guard self.autoHideAllowed, anchor == self.anchor else { continue }
+                if shouldAutoHide(pinned: self.session.pinned, anchor: anchor, current: current, own: Self.ownToken) {
+                    self.orderOut()
                 }
             }
         }
