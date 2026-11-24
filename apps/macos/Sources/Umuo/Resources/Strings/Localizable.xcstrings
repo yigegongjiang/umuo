@@ -11152,6 +11152,35 @@
         }
       }
     },
+    "voice.escCancelHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc 取消"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc 取消"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc to cancel"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc でキャンセル"
+          }
+        }
+      }
+    },
     "voice.escHint": {
       "extractionState": "manual",
       "localizations": {

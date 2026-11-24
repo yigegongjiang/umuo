@@ -1021,7 +1021,7 @@ struct VoiceRulesTests {
             #expect(catalog.entries[VoiceOverlayView.messageKey(kind)]?.values.count == 4, "\(kind)")
         }
         #expect(catalog.entries["voice.micUsage"]?.values.count == 4)
-        for key in ["voice.retry", "voice.truncated", "voice.preparingEngine", "voice.translating",
+        for key in ["voice.retry", "voice.truncated", "voice.preparingEngine", "voice.translating", "voice.escCancelHint",
                     "prefs.voice.tidy", "prefs.voice.translate", "prefs.hotkey.comboOnly", "history.sceneVoice"] {
             #expect(catalog.entries[key]?.values.count == 4, "\(key)")
         }

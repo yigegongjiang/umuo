@@ -58,14 +58,15 @@ final class HotkeyCenter {
         if case .combo(value: "") = parseHotkey(value: value) { true } else { false }
     }
 
-    /// 一个设置值 → 计划；清空了返回 nil（不注册）。缺字段（`nil`：旧配置、手写的部分设置）按默认值，
-    /// 与清空区分开：老用户的配置里没有新加的键，不能因此就没有快捷键。
+    /// 一个设置值 → 计划；清空了返回 nil（不注册）。缺字段（`nil`）回落到兜底键 `fallback`，与清空区分开。
+    /// Rust 按 `Settings::default` 补齐缺的键再交给 Swift，缺字段只出现在手写的部分 JSON（测试、内核打开前的占位）里；
+    /// 划词、原地替换的兜底键是 ⌥D / ⌥⇧T，不是 Rust 的默认值 ⌃⌃ / ⌥⌥（连按不能当组合键回落）。
     nonisolated static func plan(_ value: String?, fallback: String) -> Plan? {
         let value = value ?? fallback
         if isCleared(value) { return nil }
         return switch parseHotkey(value: value) {
         case let .doubleTap(tap): .doubleTap(tap)
-        // 默认值都是合法组合键，回落一定解析得出来
+        // 兜底键都是合法组合键，回落一定解析得出来
         case let .combo(combo): .combo(HotkeyCombo.parse(combo) ?? HotkeyCombo.parse(fallback)!)
         }
     }

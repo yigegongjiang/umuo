@@ -163,8 +163,8 @@ struct VoiceOverlayView: View {
                             .font(.title2.monospacedDigit())
                     }
                 }
-                // 录音由语音键触发，正常总有键名；万一没有也不留空，只提示 Esc
-                Text(model.hotkeyLabel.map { t("voice.recordingHint", ["hotkey": $0]) } ?? t("voice.escHint"))
+                // 录音由语音键触发，正常总有键名；万一没有也不留空，只提示 Esc 取消录音
+                Text(model.hotkeyLabel.map { t("voice.recordingHint", ["hotkey": $0]) } ?? t("voice.escCancelHint"))
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             .font(.callout)
